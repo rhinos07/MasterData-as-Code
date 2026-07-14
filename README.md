@@ -3,10 +3,24 @@
 MasterData-as-Code: declarative, version-controlled description of
 **item/article master data** - physical attributes, packaging/UOM
 hierarchy, sourcing and lifecycle rules - as YAML, validated via CI.
-Sibling project to [`Warehouse-as-Code`](../Warehouse-as-Code) (physical
-structure + movement rules) and `OrderOrchestration-as-Code` (order
-split/workflow rules) - this repo is the foundation both others
-reference by item id.
+This is the foundation the sibling repos below reference by item id.
+
+## Related Projects
+
+Part of a family of sibling "-as-Code" repos sharing the same declarative
+pattern (JSON Schema validation, `structure/` vs. `strategies/`,
+`elements/` catalogs):
+
+| Repo | Covers |
+|---|---|
+| [`Warehouse-as-Code`](https://github.com/rhinos07/Warehouse-as-Code) | Physical warehouse structure, material-flow communication, movement/replenishment rules |
+| [`OrderOrchestration-as-Code`](https://github.com/rhinos07/OrderOrchestration-as-Code) | How incoming orders are split, and which downstream workflow each split triggers |
+| **MasterData-as-Code** (this repo) | Item/article master data, packaging/UOM hierarchy, sourcing & lifecycle rules |
+
+`Warehouse-as-Code`'s `elements/load_unit_types.yaml` is conceptually
+packaging master data and a candidate to eventually move here (see
+"Shared Vocabulary" below); both sibling repos reference item ids owned
+by this repo.
 
 ## Core Principle
 
