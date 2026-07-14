@@ -1,0 +1,163 @@
+# MasterData-as-Code
+
+MasterData-as-Code: declarative, version-controlled description of
+**item/article master data** - physical attributes, packaging/UOM
+hierarchy, sourcing and lifecycle rules - as YAML, validated via CI.
+Sibling project to [`Warehouse-as-Code`](../Warehouse-as-Code) (physical
+structure + movement rules) and `OrderOrchestration-as-Code` (order
+split/workflow rules) - this repo is the foundation both others
+reference by item id.
+
+## Core Principle
+
+| Layer | What | Change Frequency | Who Changes It |
+|---|---|---|---|
+| `elements/` | Reusable catalogs (UOM types, packaging materials, hazmat classes) | very rarely | Architect/Compliance |
+| `customers/<customer>/company.yaml` | Tenant/organization identity | very rarely (onboarding/offboarding) | Admin |
+| `customers/<customer>/categories/<category>/category.yaml` | Product category/family identity | rarely | Merchandising Admin |
+| `.../categories/<category>/structure/` | Item master: physical attributes, packaging/UOM hierarchy | rarely (per new item, shape is stable) | Merchandising, strict review |
+| `.../categories/<category>/strategies/` | Sourcing and lifecycle rules | frequently | Procurement / Merchandising Ops, lenient review |
+
+A company can have multiple product categories, and each category groups
+one or more items - **Company → Category → Item**. A category also
+carries shared `default_attributes` that individual items inherit unless
+overridden (same pattern as `Warehouse-as-Code`'s `storage_type.default_attributes`
+→ `storage_point` exceptions). This mirrors the same principle both
+sibling repos use: a stable identity layer, then a `structure/` vs.
+`strategies/` split by change frequency and reviewer.
+
+**What this repo is not**: it does not track live inventory, stock
+levels, or batch/lot instances (that's runtime state in the WMS/ERP -
+here, KCC). It does not define warehouse structure or movement rules
+(that's `Warehouse-as-Code`). It does not define how an order gets split
+or which workflow that triggers (that's `OrderOrchestration-as-Code`).
+This repo only defines: what an item *is* - its physical facts, how it's
+packaged/converted between units, and the (slower-changing) business
+rules for sourcing and lifecycle state. Analogous to Terraform: the code
+describes the item's master facts, not any single unit's current stock
+position.
+
+## Repo Structure
+
+```
+master-data-definitions/
+├── schemas/                  # JSON Schema for validating all YAML files
+├── elements/                 # Reusable templates and catalogs
+│   ├── uom_types.yaml               # Each/case/pallet/… base unit definitions
+│   ├── packaging_materials.yaml     # Carton/tote/pallet carrier definitions
+│   └── hazmat_classes.yaml          # Hazardous material / compliance classifications
+├── customers/
+│   └── <customer>/                          # = Company
+│       ├── company.yaml                     # Top level, lists categories (and partners, see below)
+│       └── categories/
+│           └── <category>/                  # = Product category/family
+│               ├── category.yaml            # Imports structure/strategies below
+│               ├── structure/                       # Item facts (stable)
+│               │   ├── items.yaml                   # Item master: id, dimensions, weight, hazmat class
+│               │   └── packaging.yaml               # UOM/packaging hierarchy: each -> case -> pallet
+│               └── strategies/                       # Process rules (changes often)
+│                   ├── sourcing.yaml                 # Preferred/alternate supplier per item, lead times
+│                   └── lifecycle.yaml                # Seasonal windows, active/discontinued, substitution
+├── tools/
+│   ├── validate.py          # Validation script (schema + consistency checks)
+│   └── compile.py           # Expands any generator syntax into concrete
+│                             #   item/UOM instances (build/ output)
+├── docs/
+│   └── entity-glossary.md
+└── .github/workflows/validate.yaml   # CI pipeline
+```
+
+## Quickstart
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Validates a company.yaml or category.yaml - cascades down to every
+# category/item it references
+python tools/validate.py customers/example_customer/company.yaml
+
+# Expand any generator syntax into concrete item/packaging instances
+# for one specific category
+python tools/compile.py customers/example_customer/categories/beverages/category.yaml --output build/items.yaml
+```
+
+## Examples
+
+- `customers/example_customer/` - *(to be added)* one category with a
+  handful of items showing a simple each/case/pallet packaging
+  hierarchy, a hazmat-classified item, and a seasonal item with
+  lifecycle rules.
+
+## Core Concepts (Quick Reference)
+
+- **category** — a product family/group (e.g. `beverages`,
+  `electronics`) that items belong to; carries `default_attributes`
+  items inherit unless they override them.
+- **item** — a single article/SKU: id, description, physical dimensions,
+  weight, `hazmat_classes` (references `elements/hazmat_classes.yaml`),
+  default UOM.
+- **packaging hierarchy / UOM conversion** — how many `each` per `case`,
+  `case` per `pallet`, etc. for an item - referenced by
+  `Warehouse-as-Code`'s `replenishment_strategy.unit_conversion` and by
+  `OrderOrchestration-as-Code`'s split rules (e.g. "only split at case
+  boundaries").
+- **sourcing rule** — preferred and alternate supplier(s) for an item,
+  lead times, minimum order quantities. Independent of packaging/UOM
+  facts - same separation of concerns as structure vs. strategies
+  elsewhere in this family of repos.
+- **lifecycle rule** — seasonal availability windows, active →
+  discontinued transitions, substitute-item rules for when an item goes
+  out of stock/end-of-life.
+
+Full glossary: `docs/entity-glossary.md` *(to be written - mirror the
+structure of Warehouse-as-Code's docs/entity-glossary.md)*
+
+## Shared Vocabulary with Warehouse-as-Code
+
+`Warehouse-as-Code` already has an `elements/load_unit_types.yaml`
+catalog (`pallet_euro`, `carton`, `autostore_bin`, `order_tote`, …)
+describing physical carrier dimensions - conceptually this is packaging
+*master data*, not warehouse structure. Once this repo exists, decide
+whether `load_unit_types.yaml` should move here (and `Warehouse-as-Code`
+references it) or stay duplicated. **Don't solve this prematurely** -
+the two catalogs can drift apart safely for a while; only extract/merge
+once real duplication actually causes pain.
+
+## Open Scoping Question
+
+Should trading-partner master data (customers, suppliers) live in this
+repo alongside item master data, or in its own repo? Real-world MDM
+often splits these (different owning teams - Procurement owns supplier
+master, Sales/Credit owns customer master, Merchandising owns item
+master). This README assumes item master only; if partners join later,
+consider `customers/<customer>/partners/` as a parallel top-level
+sibling to `categories/`, or a fully separate repo - same
+separate-owners/separate-lifecycle reasoning used to keep
+`OrderOrchestration-as-Code` and `Warehouse-as-Code` apart.
+
+## Next Steps for This Repo
+
+- [ ] Define `schemas/category.schema.json`, `schemas/item.schema.json`,
+      `schemas/packaging.schema.json`
+- [ ] Build `customers/example_customer/` with a worked category + items
+- [ ] Decide the shared-vocabulary question above (`load_unit_types.yaml`
+      location) and the open scoping question (partners)
+- [ ] `tools/validate.py` / `tools/compile.py` - port from
+      `Warehouse-as-Code`'s tooling as a starting point, adjust entity
+      names
+
+### Out of Scope (By Design)
+
+- **Runtime state**: live stock levels, batch/lot instances, current
+  inventory positions - these live in the WMS/ERP runtime database
+  (KCC), not here.
+- **Order structure and splitting**: that's `OrderOrchestration-as-Code`.
+- **Warehouse structure and movement rules**: physical layout,
+  storage_types, `movement_rules.yaml` - that's `Warehouse-as-Code`.
+  This repo defines what an item *is*; where it's physically stored and
+  how it moves is `Warehouse-as-Code`'s concern.
+- **Pricing, promotions, tax classification** - commercial master data
+  usually owned by a separate Pricing/Finance domain, not modeled here
+  unless you decide otherwise.
