@@ -1,0 +1,44 @@
+# Item master: id, dimensions, weight, hazmat class. Validates against
+# schemas/item.schema.json (per entry). default_uom inherits from
+# category.yaml's default_attributes.default_uom unless set here - see
+# tools/compile.py.
+
+items:
+  - id: "ITEM_001"
+    description: "Mineral Water 1.5L PET"
+    dimensions:
+      width: { value: 90, unit: "mm" }
+      depth: { value: 90, unit: "mm" }
+      height: { value: 320, unit: "mm" }
+    weight: { value: 1.55, unit: "kg" }
+
+  - id: "ITEM_002"
+    description: "Cola Can 0.33L"
+    dimensions:
+      width: { value: 66, unit: "mm" }
+      depth: { value: 66, unit: "mm" }
+      height: { value: 123, unit: "mm" }
+    weight: { value: 0.35, unit: "kg" }
+
+  # Seasonal item - see strategies/lifecycle.yaml. Also the item
+  # Allocation-as-Code's SEARCH_ITEM_003_FEFO rule scopes to: short shelf
+  # life is exactly why that rule uses FEFO with a 30-day floor.
+  - id: "ITEM_003"
+    description: "Iced Tea Peach 0.5L PET"
+    dimensions:
+      width: { value: 70, unit: "mm" }
+      depth: { value: 70, unit: "mm" }
+      height: { value: 210, unit: "mm" }
+    weight: { value: 0.53, unit: "kg" }
+
+  # Hazmat-classified item - overproof spirit, flammable at this ABV.
+  # Sold by the case only, hence the default_uom override.
+  - id: "ITEM_004"
+    description: "Overproof Rum 1L, 75% vol"
+    dimensions:
+      width: { value: 90, unit: "mm" }
+      depth: { value: 90, unit: "mm" }
+      height: { value: 300, unit: "mm" }
+    weight: { value: 1.3, unit: "kg" }
+    hazmat_classes: ["GHS02_FLAMMABLE"]
+    default_uom: "case"

@@ -16,11 +16,14 @@ pattern (JSON Schema validation, `structure/` vs. `strategies/`,
 | [`Topology-as-Code`](https://github.com/rhinos07/Topology-as-Code) | Physical warehouse structure, material-flow communication, movement/replenishment rules |
 | [`OrderOrchestration-as-Code`](https://github.com/rhinos07/OrderOrchestration-as-Code) | How incoming orders are split, and which downstream workflow each split triggers |
 | **MasterData-as-Code** (this repo) | Item/article master data, packaging/UOM hierarchy, sourcing & lifecycle rules |
+| [`Allocation-as-Code`](https://github.com/rhinos07/Allocation-as-Code) | Stock-search configuration: search-zone sequence, selection strategy, constraints |
 
 `Topology-as-Code`'s `elements/load_unit_types.yaml` is conceptually
 packaging master data and a candidate to eventually move here (see
-"Shared Vocabulary" below); both sibling repos reference item ids owned
-by this repo.
+"Shared Vocabulary" below); all three sibling repos reference item/
+category ids owned by this repo -
+`OrderOrchestration-as-Code`'s `material_request.item_id`, and now also
+`Allocation-as-Code`'s `search_rule.applies_to.category`/`item_id`.
 
 ## Core Principle
 
@@ -99,10 +102,18 @@ python tools/compile.py customers/example_customer/categories/beverages/category
 
 ## Examples
 
-- `customers/example_customer/` - *(to be added)* one category with a
-  handful of items showing a simple each/case/pallet packaging
-  hierarchy, a hazmat-classified item, and a seasonal item with
-  lifecycle rules.
+- `customers/example_customer/categories/beverages/` - one category,
+  four items: `ITEM_001`/`ITEM_002` (plain each→case→pallet hierarchy,
+  `default_uom` inherited from the category's `default_attributes`),
+  `ITEM_003` (seasonal - `strategies/lifecycle.yaml`'s `season_window`,
+  substituted by `ITEM_002` out of season; also the item
+  `Allocation-as-Code`'s `SEARCH_ITEM_003_FEFO` rule scopes to, since its
+  short shelf life is exactly why that rule needs `FEFO`), and
+  `ITEM_004` (hazmat-classified, case-only - `default_uom: "case"`
+  overrides the category default). `ITEM_001`-`ITEM_003` are the same
+  item ids `WMS-POC`'s scenarios and `Allocation-as-Code`'s examples
+  already use, kept consistent on purpose rather than inventing new ids
+  per repo.
 
 ## Core Concepts (Quick Reference)
 
@@ -125,8 +136,7 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   discontinued transitions, substitute-item rules for when an item goes
   out of stock/end-of-life.
 
-Full glossary: `docs/entity-glossary.md` *(to be written - mirror the
-structure of Topology-as-Code's docs/entity-glossary.md)*
+Full glossary: [`docs/entity-glossary.md`](docs/entity-glossary.md)
 
 ## Shared Vocabulary with Topology-as-Code
 
@@ -153,14 +163,29 @@ separate-owners/separate-lifecycle reasoning used to keep
 
 ## Next Steps for This Repo
 
-- [ ] Define `schemas/category.schema.json`, `schemas/item.schema.json`,
-      `schemas/packaging.schema.json`
-- [ ] Build `customers/example_customer/` with a worked category + items
+- [x] ~~Define `schemas/category.schema.json`, `schemas/item.schema.json`,
+      `schemas/packaging.schema.json`~~ - done, plus `sourcing.schema.json`,
+      `lifecycle.schema.json`, and the three `elements/` catalog schemas.
+- [x] ~~Build `customers/example_customer/` with a worked category +
+      items~~ - `categories/beverages/` with 4 items, see "Examples".
+- [x] ~~`tools/validate.py` / `tools/compile.py`~~ - done. `compile.py`
+      is intentionally small: it only resolves `default_uom` inheritance
+      (item's own value, falling back to the category's
+      `default_attributes.default_uom`) into a flat items artifact -
+      there's no generator syntax to expand here, unlike
+      `Topology-as-Code`'s `storage_point_generator`.
 - [ ] Decide the shared-vocabulary question above (`load_unit_types.yaml`
       location) and the open scoping question (partners)
-- [ ] `tools/validate.py` / `tools/compile.py` - port from
-      `Topology-as-Code`'s tooling as a starting point, adjust entity
-      names
+- [ ] Cross-check `OrderOrchestration-as-Code`'s `material_request.item_id`
+      and `Allocation-as-Code`'s `search_rule.applies_to.category`/
+      `item_id` against this repo's real ids - same category of gap
+      every sibling repo already has against every other one (not
+      implemented in any repo's own `tools/validate.py`; see
+      `docs/entity-glossary.md` "Cross-Repo References"). `WMS-POC` is
+      the one place in this family that has actually implemented a
+      cross-repo check so far (target-id reachability against
+      `Topology-as-Code`) - extending it to item ids would be the
+      natural next step, not a change to this repo.
 
 ### Out of Scope (By Design)
 

@@ -1,0 +1,15 @@
+# Category-level file. Short and stable - references everything else.
+# Validates against schemas/category.schema.json
+
+category:
+  id: "beverages"
+  name: "Beverages"
+
+  default_attributes:
+    default_uom: "each"   # inherited by items below that don't set their own
+
+  imports:
+    - "structure/items.yaml"
+    - "structure/packaging.yaml"
+    - "strategies/sourcing.yaml"
+    - "strategies/lifecycle.yaml"

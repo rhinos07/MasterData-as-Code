@@ -1,0 +1,25 @@
+# Preferred/alternate supplier per item, lead times. Validates against
+# schemas/sourcing.schema.json (per entry).
+
+sourcing:
+  - item_id: "ITEM_001"
+    preferred_supplier: "SUP_ALPINE_SPRINGS"
+    alternate_suppliers: ["SUP_CRYSTAL_WATERS"]
+    lead_time_days: 3
+    minimum_order_quantity: 80   # 1 pallet
+
+  - item_id: "ITEM_002"
+    preferred_supplier: "SUP_FIZZCO"
+    lead_time_days: 5
+    minimum_order_quantity: 60
+
+  - item_id: "ITEM_003"
+    preferred_supplier: "SUP_FIZZCO"
+    alternate_suppliers: ["SUP_SUMMERBREW"]
+    lead_time_days: 5
+    minimum_order_quantity: 100
+
+  - item_id: "ITEM_004"
+    preferred_supplier: "SUP_DISTILLERY_NORTH"
+    lead_time_days: 14
+    minimum_order_quantity: 40

@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/lifecycle.schema.json",
+  "title": "Lifecycle Rule",
+  "description": "Seasonal availability windows, active -> discontinued transitions, substitute-item rules for when an item goes out of stock/end-of-life.",
+  "type": "object",
+  "required": ["item_id", "status"],
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "References an id in this category's structure/items.yaml."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "seasonal", "discontinued"]
+    },
+    "season_window": {
+      "type": "object",
+      "description": "Required when status is 'seasonal' - the recurring date range (month-day) this item is available.",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "pattern": "^\\d{2}-\\d{2}$", "description": "MM-DD" },
+        "end": { "type": "string", "pattern": "^\\d{2}-\\d{2}$", "description": "MM-DD" }
+      },
+      "additionalProperties": false
+    },
+    "substitute_item_id": {
+      "type": "string",
+      "description": "References another id in this category's structure/items.yaml - offered when this item is unavailable (out of season or discontinued)."
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "seasonal" } }, "required": ["status"] },
+      "then": { "required": ["season_window"] }
+    }
+  ]
+}

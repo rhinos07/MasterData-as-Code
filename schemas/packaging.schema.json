@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/packaging.schema.json",
+  "title": "Packaging Hierarchy",
+  "description": "One item's each -> case -> pallet conversion hierarchy. Referenced by Topology-as-Code's replenishment_strategy.unit_conversion and OrderOrchestration-as-Code's split rules (e.g. 'only split at case boundaries').",
+  "type": "object",
+  "required": ["item_id", "uom_hierarchy"],
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "References an id in this category's structure/items.yaml."
+    },
+    "uom_hierarchy": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered smallest-to-largest. The first entry's uom must equal the item's default_uom; each subsequent entry's quantity_of_previous is how many of the prior entry's uom make up one of this entry's uom.",
+      "items": {
+        "type": "object",
+        "required": ["uom", "quantity_of_previous"],
+        "properties": {
+          "uom": {
+            "type": "string",
+            "description": "References an id in elements/uom_types.yaml."
+          },
+          "quantity_of_previous": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How many of the previous entry's uom make up one of this uom. Ignored (should be 1) on the first entry."
+          },
+          "packaging_material": {
+            "type": "string",
+            "description": "References an id in elements/packaging_materials.yaml."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

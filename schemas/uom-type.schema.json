@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/uom-type.schema.json",
+  "title": "UOM Type",
+  "description": "Catalog entry for a base unit of measure. Referenced by items.yaml default_uom and packaging.yaml uom_hierarchy[].uom.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "description": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/packaging-material.schema.json",
+  "title": "Packaging Material",
+  "description": "Catalog entry for a physical carrier/wrap material. Referenced by packaging.yaml uom_hierarchy[].packaging_material.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "description": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/sourcing.schema.json",
+  "title": "Sourcing Rule",
+  "description": "Preferred/alternate supplier(s) for an item, lead times, minimum order quantity. Independent of packaging/UOM facts.",
+  "type": "object",
+  "required": ["item_id", "preferred_supplier"],
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "References an id in this category's structure/items.yaml."
+    },
+    "preferred_supplier": { "type": "string" },
+    "alternate_suppliers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "lead_time_days": { "type": "integer", "minimum": 0 },
+    "minimum_order_quantity": { "type": "integer", "minimum": 1 }
+  },
+  "additionalProperties": false
+}

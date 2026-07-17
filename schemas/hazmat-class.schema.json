@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/hazmat-class.schema.json",
+  "title": "Hazmat Class",
+  "description": "Catalog entry for a hazardous material / compliance classification. Referenced by items.yaml hazmat_classes[].",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]+$"
+    },
+    "description": { "type": "string" }
+  },
+  "additionalProperties": true
+}

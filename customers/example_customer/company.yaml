@@ -1,0 +1,8 @@
+# Top level, lists categories. Validates against schemas/company.schema.json
+
+company:
+  id: "example_customer"
+  name: "Example Customer GmbH"
+
+  categories:
+    - "categories/beverages/category.yaml"

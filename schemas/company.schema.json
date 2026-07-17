@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/company.schema.json",
+  "title": "Company",
+  "description": "Top-level tenant/organization. Lists one or more categories.",
+  "type": "object",
+  "required": ["company"],
+  "properties": {
+    "company": {
+      "type": "object",
+      "required": ["id", "name", "categories"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Relative paths to category.yaml files."
+        }
+      }
+    }
+  }
+}

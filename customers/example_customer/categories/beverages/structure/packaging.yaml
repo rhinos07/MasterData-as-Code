@@ -1,0 +1,46 @@
+# UOM/packaging hierarchy: each -> case -> pallet. Validates against
+# schemas/packaging.schema.json (per entry).
+
+packaging:
+  - item_id: "ITEM_001"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+      - uom: "case"
+        quantity_of_previous: 6
+        packaging_material: "shrink_film"
+      - uom: "pallet"
+        quantity_of_previous: 80
+        packaging_material: "stretch_wrap_pallet"
+
+  - item_id: "ITEM_002"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+      - uom: "case"
+        quantity_of_previous: 24
+        packaging_material: "corrugated_carton"
+      - uom: "pallet"
+        quantity_of_previous: 60
+        packaging_material: "stretch_wrap_pallet"
+
+  - item_id: "ITEM_003"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+      - uom: "case"
+        quantity_of_previous: 12
+        packaging_material: "corrugated_carton"
+      - uom: "pallet"
+        quantity_of_previous: 100
+        packaging_material: "stretch_wrap_pallet"
+
+  # No "each" level - ITEM_004 is case-only (default_uom: "case" in
+  # items.yaml), so its hierarchy starts at case.
+  - item_id: "ITEM_004"
+    uom_hierarchy:
+      - uom: "case"
+        quantity_of_previous: 1
+      - uom: "pallet"
+        quantity_of_previous: 40
+        packaging_material: "stretch_wrap_pallet"

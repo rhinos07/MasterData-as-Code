@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/category.schema.json",
+  "title": "Category (Category-Level)",
+  "description": "A product category/family belonging to a company. Imports its own structure/ and strategies/, mirroring the family's warehouse.yaml/order_type.yaml/allocation.yaml pattern.",
+  "type": "object",
+  "required": ["category"],
+  "properties": {
+    "category": {
+      "type": "object",
+      "required": ["id", "imports"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "default_attributes": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Shared attributes every item in this category inherits unless it overrides them - same pattern as Topology-as-Code's storage_type.default_attributes -> storage_point exceptions."
+        },
+        "imports": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Relative paths to further YAML files (structure/, strategies/)."
+        }
+      }
+    }
+  }
+}

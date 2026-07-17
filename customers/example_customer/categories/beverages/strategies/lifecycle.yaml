@@ -1,0 +1,19 @@
+# Seasonal windows, active/discontinued, substitution. Validates against
+# schemas/lifecycle.schema.json (per entry).
+
+lifecycle:
+  - item_id: "ITEM_001"
+    status: "active"
+
+  - item_id: "ITEM_002"
+    status: "active"
+
+  # Seasonal - only available April through September. Falls back to
+  # ITEM_002 the rest of the year.
+  - item_id: "ITEM_003"
+    status: "seasonal"
+    season_window: { start: "04-01", end: "09-30" }
+    substitute_item_id: "ITEM_002"
+
+  - item_id: "ITEM_004"
+    status: "active"

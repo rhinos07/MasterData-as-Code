@@ -1,0 +1,15 @@
+# Reusable catalog of physical carrier/wrap materials a case or pallet is
+# packaged in. Referenced by structure/packaging.yaml's uom_hierarchy[].
+# packaging_material. Distinct from Topology-as-Code's
+# elements/load_unit_types.yaml, which describes the transport load
+# unit's footprint/weight, not what it's constructed of.
+
+packaging_materials:
+  - id: "corrugated_carton"
+    description: "Standard corrugated cardboard case."
+
+  - id: "shrink_film"
+    description: "Shrink-wrapped bundle, no rigid case."
+
+  - id: "stretch_wrap_pallet"
+    description: "Pallet load secured with stretch wrap film."

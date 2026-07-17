@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/item.schema.json",
+  "title": "Item",
+  "description": "A single article/SKU's physical master facts. Referenced by id from OrderOrchestration-as-Code's material_request.item_id and Allocation-as-Code's search_rule.applies_to.item_id.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string" },
+    "description": { "type": "string" },
+    "dimensions": {
+      "type": "object",
+      "properties": {
+        "width": { "$ref": "#/definitions/lengthValue" },
+        "depth": { "$ref": "#/definitions/lengthValue" },
+        "height": { "$ref": "#/definitions/lengthValue" }
+      },
+      "additionalProperties": false
+    },
+    "weight": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string", "enum": ["kg", "g"] }
+      },
+      "additionalProperties": false
+    },
+    "hazmat_classes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "References ids in elements/hazmat_classes.yaml."
+    },
+    "default_uom": {
+      "type": "string",
+      "description": "References an id in elements/uom_types.yaml - the unit material_request.quantity is expressed in when no other uom is specified. Omit to inherit the category's default_attributes.default_uom (see tools/compile.py) - required for at least one of the two to be set."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "lengthValue": {
+      "type": "object",
+      "required": ["value", "unit"],
+      "properties": {
+        "value": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string", "enum": ["m", "mm", "cm"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}
