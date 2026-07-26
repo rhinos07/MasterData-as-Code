@@ -84,6 +84,30 @@ master-data-definitions/
 └── .github/workflows/validate.yaml   # CI pipeline
 ```
 
+## Schema Versioning
+
+Every `category.yaml` declares the schema generation it conforms to:
+
+```yaml
+api_version: "masterdata-as-code/v1"
+```
+
+It sits on the category because that is this repo's self-contained,
+independently loadable scope - the same role `warehouse.yaml` plays in
+`Topology-as-Code`. `company.yaml` is an index pointing at categories, not
+a dataset of its own, so it carries no version.
+
+The compiled artifact from `tools/compile.py` declares both the source
+`api_version` it was built from and its own
+`artifact_api_version: "masterdata-as-code/artifact-v1"` - a consumer of
+the artifact is affected by changes to the artifact's shape, not by every
+change to the authoring schemas.
+
+An incompatible change raises the version rather than silently
+reinterpreting existing data. See
+[`Warehouse-as-Code` ADR-0001](https://github.com/rhinos07/Warehouse-as-Code/blob/main/docs/adr/0001-layered-specification-model.md),
+measure 2.
+
 ## Quickstart
 
 ```bash

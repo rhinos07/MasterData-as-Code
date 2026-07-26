@@ -1,6 +1,8 @@
 # Category-level file. Short and stable - references everything else.
 # Validates against schemas/category.schema.json
 
+api_version: "masterdata-as-code/v1"
+
 category:
   id: "beverages"
   name: "Beverages"

@@ -4,8 +4,12 @@
   "title": "Category (Category-Level)",
   "description": "A product category/family belonging to a company. Imports its own structure/ and strategies/, mirroring the family's warehouse.yaml/order_type.yaml/allocation.yaml pattern.",
   "type": "object",
-  "required": ["category"],
+  "required": ["api_version", "category"],
   "properties": {
+    "api_version": {
+      "const": "masterdata-as-code/v1",
+      "description": "Schema generation this category document conforms to. Declared on the category because that is this repo's self-contained, independently loadable scope - the same role warehouse.yaml plays in Topology-as-Code. A future incompatible change to this repo's schemas raises the version instead of silently reinterpreting existing data."
+    },
     "category": {
       "type": "object",
       "required": ["id", "imports"],

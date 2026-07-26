@@ -17,6 +17,12 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate import collect_imports, load_yaml  # noqa: E402
 
+# Versioned independently of the source api_version: a consumer of the
+# compiled artifact is affected by changes to the artifact's own shape, not
+# by every change to the authoring schemas. Same split Topology-as-Code
+# makes between api_version and artifact_api_version.
+ARTIFACT_API_VERSION = "masterdata-as-code/artifact-v1"
+
 
 def compile_category(category_file: Path) -> list[dict]:
     category_data = load_yaml(category_file)["category"]
@@ -45,10 +51,17 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv[1:])
 
     items = compile_category(args.category_file)
+    source_api_version = load_yaml(args.category_file)["api_version"]
+
+    artifact = {
+        "api_version": source_api_version,
+        "artifact_api_version": ARTIFACT_API_VERSION,
+        "items": items,
+    }
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:
-        yaml.dump({"items": items}, f, sort_keys=False, allow_unicode=True)
+        yaml.dump(artifact, f, sort_keys=False, allow_unicode=True)
 
     print(f"✅ Wrote {len(items)} compiled item(s) to {args.output}")
     return 0
