@@ -83,11 +83,11 @@ configuration.
 | `Allocation-as-Code`'s `search_rule.applies_to.category`/`item_id` | This repo's `category.id` / `structure/items.yaml` `id` |
 | `structure/packaging.yaml`'s `item_id` | This repo's own `structure/items.yaml` `id` (same category) |
 
-None of these are cross-checked by any repo's `tools/validate.py` - same
-category of gap every sibling repo already has against every other one
-(see each repo's own README "Open Validation Gaps"/"Next Steps"). Only
-`WMS-POC` has, so far, implemented an actual cross-repo check (target-id
-reachability against `Topology-as-Code`) - see its README "Findings".
+No repo's own `tools/validate.py` checks these. `Warehouse-as-Code`
+does, per site: its site manifest names this repo's company, and
+`tools/check_sites.py` resolves Allocation's item ids, categories and
+owners against it. `OrderOrchestration-as-Code` configuration holds no
+item ids (only its illustrative `examples/` and live orders do).
 
 ## What This Repo Is Not
 
