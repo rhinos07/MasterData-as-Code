@@ -13,3 +13,4 @@ category:
 
   imports:
     - "structure/items.yaml"
+    - "structure/packaging.yaml"

@@ -1,0 +1,12 @@
+# UOM/packaging hierarchy: each -> case. The case is owner Beta's own
+# returnable crate (customers/example_3pl/load_unit_types.yaml).
+# Validates against schemas/packaging.schema.json (per entry).
+
+packaging:
+  - item_id: "BETA_001"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+      - uom: "case"
+        quantity_of_previous: 100
+        load_unit_type: "beta_parts_crate"
