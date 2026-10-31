@@ -1,0 +1,24 @@
+# Category for the items used by OrderOrchestration-as-Code's
+# illustrative order walkthroughs (examples/). Validates against
+# schemas/category.schema.json. Example values, not a real assortment.
+
+api_version: "masterdata-as-code/v1"
+
+category:
+  id: "household"
+  name: "Household Goods"
+
+  default_attributes:
+    default_uom: "each"
+    storage_condition: "ambient"
+    # Non-food: no lot, no expiry, no serial number.
+    tracking:
+      lot: "none"
+      expiry:
+        tracked: false
+      serial:
+        capture: "none"
+
+  imports:
+    - "structure/items.yaml"
+    - "structure/packaging.yaml"

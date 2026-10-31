@@ -1,0 +1,30 @@
+# Items of OrderOrchestration-as-Code's example walkthroughs.
+# Validates against schemas/item.schema.json (per entry).
+
+items:
+  # order_walkthrough L1: small, stored in the AutoStore cell.
+  - id: "ITEM_SMALL_GADGET"
+    description: "Small Gadget (example)"
+    dimensions:
+      width: { value: 80, unit: "mm" }
+      depth: { value: 60, unit: "mm" }
+      height: { value: 30, unit: "mm" }
+    weight: { value: 0.2, unit: "kg" }
+
+  # order_walkthrough L2: bulky, stored in the manual warehouse.
+  - id: "ITEM_BULKY_LAMP"
+    description: "Floor Lamp, bulky (example)"
+    dimensions:
+      width: { value: 400, unit: "mm" }
+      depth: { value: 400, unit: "mm" }
+      height: { value: 1600, unit: "mm" }
+    weight: { value: 6.5, unit: "kg" }
+
+  # multi_system_reallocation_walkthrough L1.
+  - id: "ITEM_WIDGET"
+    description: "Widget (example)"
+    dimensions:
+      width: { value: 100, unit: "mm" }
+      depth: { value: 100, unit: "mm" }
+      height: { value: 50, unit: "mm" }
+    weight: { value: 0.4, unit: "kg" }

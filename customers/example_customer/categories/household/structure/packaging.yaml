@@ -1,0 +1,34 @@
+# Packaging each -> case. Validates against schemas/packaging.schema.json
+# (per entry). Example GTINs in the GS1 restricted range 200-299.
+
+packaging:
+  - item_id: "ITEM_SMALL_GADGET"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+        barcodes:
+          - { code: "2000000001012", type: "gtin", primary: true }
+      - uom: "case"
+        quantity_of_previous: 20
+        load_unit_type: "carton"
+        barcodes:
+          - { code: "12000000001019", type: "gtin" }
+
+  - item_id: "ITEM_BULKY_LAMP"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+        barcodes:
+          - { code: "2000000001029", type: "gtin", primary: true }
+
+  - item_id: "ITEM_WIDGET"
+    uom_hierarchy:
+      - uom: "each"
+        quantity_of_previous: 1
+        barcodes:
+          - { code: "2000000001036", type: "gtin", primary: true }
+      - uom: "case"
+        quantity_of_previous: 10
+        load_unit_type: "carton"
+        barcodes:
+          - { code: "12000000001033", type: "gtin" }
