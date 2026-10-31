@@ -238,27 +238,27 @@ separate-owners/separate-lifecycle reasoning used to keep
       category's `default_attributes`) into a flat items artifact -
       there's no generator syntax to expand here, unlike
       `Topology-as-Code`'s `storage_point_generator`.
-- [ ] Cross-repo checks for `tracking` (not implemented, same gap as the
-      item ids below): `Allocation-as-Code` FEFO or
+- [ ] Cross-repo checks for `tracking`: `Allocation-as-Code` FEFO or
       `min_remaining_shelf_life_days` on an item without tracked expiry;
       an outbound shelf-life floor above `min_remaining_at_receipt_days`;
-      `allow_mixed_lots` in putaway rules for an item with `lot: none`.
+      `allow_mixed_lots` in putaway rules for an item with `lot: none`
+      (Warehouse-as-Code rules R1–R3, not checked yet).
 - [ ] Distinguish expiry kinds (best-before / use-by / pharma expiry) once
       a customer needs different blocking behaviour per kind.
 - [x] ~~Decide the shared-vocabulary question (`load_unit_types.yaml`
       location)~~ - owned here, pinned copy in `Topology-as-Code`.
 - [ ] Decide the rest of the open scoping question (suppliers, customers;
-      stock owners are done).
-- [ ] Cross-check `OrderOrchestration-as-Code`'s `material_request.item_id`
-      and `Allocation-as-Code`'s `search_rule.applies_to.category`/
-      `item_id` against this repo's real ids - same category of gap
-      every sibling repo already has against every other one (not
-      implemented in any repo's own `tools/validate.py`; see
-      `docs/entity-glossary.md` "Cross-Repo References"). `WMS-POC` is
-      the one place in this family that has actually implemented a
-      cross-repo check so far (target-id reachability against
-      `Topology-as-Code`) - extending it to item ids would be the
-      natural next step, not a change to this repo.
+      stock owners are done) - Warehouse-as-Code backlog D5.
+- [x] ~~Cross-check `Allocation-as-Code`'s `applies_to.category`/`item_id`
+      against this repo's real ids~~ - done in Warehouse-as-Code: a site
+      manifest per facility names this repo's company, and
+      `tools/check_sites.py` resolves Allocation's item ids, categories
+      and owners against it.
+- [ ] Item ids in `OrderOrchestration-as-Code`: its configuration holds
+      none; only its illustrative `examples/` do, and they still use ids
+      this repo does not define (`ITEM_SMALL_GADGET`, `ITEM_BULKY_LAMP`,
+      `ITEM_WIDGET`). Live orders are runtime data, checked at order
+      intake by the WMS.
 
 ### Out of Scope (By Design)
 
