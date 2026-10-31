@@ -71,7 +71,7 @@ master-data-definitions/
 │               ├── category.yaml            # Imports structure/strategies below
 │               ├── structure/                       # Item facts (stable)
 │               │   ├── items.yaml                   # Item master: id, dimensions, weight, hazmat class, tracking
-│               │   └── packaging.yaml               # UOM/packaging hierarchy: each -> case -> pallet
+│               │   └── packaging.yaml               # UOM/packaging hierarchy each -> case -> pallet, barcodes per level
 │               └── strategies/                       # Process rules (changes often)
 │                   ├── sourcing.yaml                 # Preferred/alternate supplier per item, lead times
 │                   └── lifecycle.yaml                # Seasonal windows, active/discontinued, substitution
@@ -79,10 +79,12 @@ master-data-definitions/
 │   ├── validate.py          # Validation script (schema + consistency checks)
 │   ├── compile.py           # Expands any generator syntax into concrete
 │   │                         #   item/UOM instances (build/ output)
-│   └── tracking.py          # Shared tracking-obligation merge (validate + compile)
+│   ├── tracking.py          # Shared tracking-obligation merge (validate + compile)
+│   └── barcodes.py          # GTIN check digit, per-owner barcode uniqueness
 ├── tests/
 │   ├── test_tracking.py     # Unit tests for tracking schema, merge and checks
-│   └── test_owners.py       # Unit tests for stock-owner declaration and checks
+│   ├── test_owners.py       # Unit tests for stock-owner declaration and checks
+│   └── test_barcodes.py     # Unit tests for barcode schema, GTIN check and uniqueness
 ├── docs/
 │   └── entity-glossary.md
 └── .github/workflows/validate.yaml   # CI pipeline
@@ -142,7 +144,9 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   four (lot required, expiry tracked, 90 days minimum remaining at
   receipt, 365 days shelf life); `ITEM_003` overrides only the two day
   values (60 / 270), `ITEM_004` switches expiry off and keeps the
-  inherited lot obligation. `ITEM_001`-`ITEM_003` are the same
+  inherited lot obligation. `ITEM_001` and `ITEM_002` carry example
+  barcodes per packaging level (GTINs from the GS1 restricted-circulation
+  prefix range 200-299, so they cannot clash with real products). `ITEM_001`-`ITEM_003` are the same
   item ids `WMS-POC`'s scenarios and `Allocation-as-Code`'s examples
   already use, kept consistent on purpose rather than inventing new ids
   per repo.
@@ -169,6 +173,9 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   remaining shelf life at receipt, total shelf life), serial number
   capture (`none`/`outbound`/`always`). Inherited from the category
   field by field.
+- **barcode** — codes per packaging level (`gtin` with verified check
+  digit, or `internal`); a scan identifies item and packaging level.
+  Unique per stock owner across the company.
 - **packaging hierarchy / UOM conversion** — how many `each` per `case`,
   `case` per `pallet`, etc. for an item - referenced by
   `Topology-as-Code`'s `replenishment_strategy.unit_conversion` and by
