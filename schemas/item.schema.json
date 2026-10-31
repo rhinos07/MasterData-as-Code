@@ -34,6 +34,10 @@
     "default_uom": {
       "type": "string",
       "description": "References an id in elements/uom_types.yaml - the unit material_request.quantity is expressed in when no other uom is specified. Omit to inherit the category's default_attributes.default_uom (see tools/compile.py) - required for at least one of the two to be set."
+    },
+    "tracking": {
+      "$ref": "tracking.schema.json",
+      "description": "Lot, expiry and serial obligations. Any field omitted here is inherited from the category's default_attributes.tracking, field by field (see tools/compile.py)."
     }
   },
   "additionalProperties": false,

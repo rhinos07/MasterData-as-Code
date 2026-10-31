@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/tracking.schema.json",
+  "title": "Tracking Obligations",
+  "description": "Which identifying data must be captured for an item's stock: lot (batch), expiry date, serial number. Used on items (structure/items.yaml) and on category.default_attributes.tracking, which items inherit field by field (see tools/compile.py). Unset fields resolve to the defaults: lot 'none', expiry.tracked false, serial.capture 'none'.",
+  "type": "object",
+  "properties": {
+    "lot": {
+      "type": "string",
+      "enum": ["none", "optional", "required"],
+      "description": "none = no lot captured. optional = captured when the supplier provides one (e.g. on the goods-receipt label). required = no receipt without a lot."
+    },
+    "expiry": {
+      "type": "object",
+      "properties": {
+        "tracked": {
+          "type": "boolean",
+          "description": "Whether stock of this item carries an expiry date (best-before, use-by or expiry - not distinguished yet)."
+        },
+        "min_remaining_at_receipt_days": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum remaining shelf life at goods receipt; stock with less is not accepted. Only allowed when expiry is tracked. Outbound shelf-life floors are Allocation-as-Code's search_rule constraints, not this field."
+        },
+        "total_shelf_life_days": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Shelf life from production. Lets the expiry date be derived when the supplier gives only a production date. Only allowed when expiry is tracked."
+        }
+      },
+      "additionalProperties": false
+    },
+    "serial": {
+      "type": "object",
+      "properties": {
+        "capture": {
+          "type": "string",
+          "enum": ["none", "outbound", "always"],
+          "description": "none = no serial numbers. outbound = captured at goods issue only. always = captured from goods receipt on, for every movement. Serial numbers are per base unit, the first entry of the item's packaging uom_hierarchy."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

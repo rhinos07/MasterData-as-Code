@@ -21,6 +21,9 @@ from jsonschema import Draft7Validator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT7
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from tracking import EXPIRY_DAY_FIELDS, resolve_tracking  # noqa: E402
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "schemas"
 ELEMENTS_DIR = REPO_ROOT / "elements"
@@ -159,6 +162,48 @@ def check_item_refs(path: Path, category_data: dict, element_ids: dict[str, set[
     return errors
 
 
+def check_tracking(path: Path, category_data: dict, packaged_item_ids: set[str]) -> list[str]:
+    """Checks each item's resolved tracking obligations:
+    - expiry day fields are only set when expiry is tracked,
+    - min_remaining_at_receipt_days does not exceed total_shelf_life_days
+      (otherwise no fresh delivery could ever be accepted),
+    - a serial-tracked item has a packaging uom_hierarchy, because serial
+      numbers are per base unit (the hierarchy's first entry)."""
+    errors: list[str] = []
+    data = load_yaml(path)
+    if not data:
+        return errors
+
+    category_tracking = (
+        category_data.get("category", {}).get("default_attributes") or {}
+    ).get("tracking")
+
+    for item in data.get("items", []):
+        item_id = item.get("id", "?")
+        tracking = resolve_tracking(item, category_tracking)
+        expiry = tracking["expiry"]
+        day_fields = [f for f in EXPIRY_DAY_FIELDS if f in expiry]
+
+        if not expiry.get("tracked") and day_fields:
+            errors.append(
+                f"{path}: item '{item_id}': tracking.expiry {', '.join(day_fields)} set but expiry is not tracked"
+            )
+
+        minimum = expiry.get("min_remaining_at_receipt_days")
+        total = expiry.get("total_shelf_life_days")
+        if minimum is not None and total is not None and minimum > total:
+            errors.append(
+                f"{path}: item '{item_id}': tracking.expiry.min_remaining_at_receipt_days ({minimum}) exceeds total_shelf_life_days ({total}) - no delivery could ever be accepted"
+            )
+
+        if tracking["serial"]["capture"] != "none" and item_id not in packaged_item_ids:
+            errors.append(
+                f"{path}: item '{item_id}': serial capture '{tracking['serial']['capture']}' needs a packaging uom_hierarchy in structure/packaging.yaml (serial numbers are per base unit)"
+            )
+
+    return errors
+
+
 def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, set[str]]) -> list[str]:
     """Checks packaging.yaml's item_id -> items.yaml, uom_hierarchy[].uom
     -> uom_types.yaml, and .packaging_material -> packaging_materials.yaml."""
@@ -238,8 +283,16 @@ def validate_category_file(category_file: Path, element_ids: dict[str, set[str]]
         items_data = load_yaml(imports["items.yaml"]) or {}
         item_ids = {i.get("id") for i in items_data.get("items", []) if i.get("id")}
 
+    packaged_item_ids: set[str] = set()
     if "packaging.yaml" in imports:
         all_errors += check_packaging_refs(imports["packaging.yaml"], item_ids, element_ids)
+        packaging_data = load_yaml(imports["packaging.yaml"]) or {}
+        packaged_item_ids = {
+            p.get("item_id") for p in packaging_data.get("packaging", [])
+            if p.get("item_id") and p.get("uom_hierarchy")
+        }
+    if "items.yaml" in imports:
+        all_errors += check_tracking(imports["items.yaml"], category_data, packaged_item_ids)
     if "sourcing.yaml" in imports:
         all_errors += check_item_id_refs(imports["sourcing.yaml"], "sourcing", item_ids)
     if "lifecycle.yaml" in imports:
