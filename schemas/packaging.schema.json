@@ -31,6 +31,10 @@
             "type": "string",
             "description": "References an id in elements/packaging_materials.yaml."
           },
+          "load_unit_type": {
+            "type": "string",
+            "description": "References an id in elements/load_unit_types.yaml: the carrier this packaging level is built on (e.g. 'pallet_euro' for the pallet level). Gives the item's default load unit per level; tools/validate.py checks that the goods weight of the level does not exceed the carrier's max_weight."
+          },
           "barcodes": {
             "type": "array",
             "minItems": 1,

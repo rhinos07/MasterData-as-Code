@@ -20,6 +20,10 @@
           "type": "object",
           "properties": {
             "tracking": { "$ref": "tracking.schema.json" },
+            "storage_condition": {
+              "type": "string",
+              "description": "Storage condition every item of this category inherits unless it sets its own - see item.schema.json storage_condition."
+            },
             "owner": {
               "type": "string",
               "description": "Owner every item of this category inherits unless it sets its own - see item.schema.json owner."

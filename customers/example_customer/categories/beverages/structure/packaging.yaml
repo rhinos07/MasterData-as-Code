@@ -15,12 +15,14 @@ packaging:
           - { code: "2000000000015", type: "gtin", primary: true }
       - uom: "case"
         quantity_of_previous: 6
+        load_unit_type: "carton"
         packaging_material: "shrink_film"
         barcodes:
           - { code: "12000000000012", type: "gtin", primary: true }
           - { code: "WAT-CS6", type: "internal" }
       - uom: "pallet"
         quantity_of_previous: 80
+        load_unit_type: "pallet_euro"
         packaging_material: "stretch_wrap_pallet"
         barcodes:
           - { code: "22000000000019", type: "gtin" }
@@ -33,11 +35,13 @@ packaging:
           - { code: "2000000000022", type: "gtin" }
       - uom: "case"
         quantity_of_previous: 24
+        load_unit_type: "carton"
         barcodes:
           - { code: "12000000000029", type: "gtin" }
         packaging_material: "corrugated_carton"
       - uom: "pallet"
         quantity_of_previous: 60
+        load_unit_type: "pallet_euro"
         packaging_material: "stretch_wrap_pallet"
 
   - item_id: "ITEM_003"
@@ -46,9 +50,11 @@ packaging:
         quantity_of_previous: 1
       - uom: "case"
         quantity_of_previous: 12
+        load_unit_type: "carton"
         packaging_material: "corrugated_carton"
       - uom: "pallet"
         quantity_of_previous: 100
+        load_unit_type: "pallet_euro"
         packaging_material: "stretch_wrap_pallet"
 
   # No "each" level - ITEM_004 is case-only (default_uom: "case" in
@@ -59,4 +65,5 @@ packaging:
         quantity_of_previous: 1
       - uom: "pallet"
         quantity_of_previous: 40
+        load_unit_type: "pallet_euro"
         packaging_material: "stretch_wrap_pallet"

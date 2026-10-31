@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/storage-condition.schema.json",
+  "title": "Storage Condition",
+  "description": "Catalog entry for a storage condition class (e.g. ambient, chilled, frozen). Items reference it via storage_condition; Topology-as-Code storage types reference the same ids through a pinned copy of this catalog.",
+  "type": "object",
+  "required": [
+    "id",
+    "temperature"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "temperature": {
+      "type": "object",
+      "required": [
+        "min",
+        "max",
+        "unit"
+      ],
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "unit": {
+          "const": "C"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Allowed temperature range in degrees Celsius. A storage place fits the class when its own temperature range lies within this one."
+    }
+  },
+  "additionalProperties": false
+}

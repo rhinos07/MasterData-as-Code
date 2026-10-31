@@ -62,7 +62,9 @@ master-data-definitions/
 ├── elements/                 # Reusable templates and catalogs
 │   ├── uom_types.yaml               # Each/case/pallet/… base unit definitions
 │   ├── packaging_materials.yaml     # Carton/tote/pallet carrier definitions
-│   └── hazmat_classes.yaml          # Hazardous material / compliance classifications
+│   ├── hazmat_classes.yaml          # Hazardous material / compliance classifications
+│   ├── load_unit_types.yaml         # Carriers (pallet, mesh box, carton, bin) incl. tare - owned here
+│   └── storage_conditions.yaml      # ambient / chilled / frozen with temperature ranges
 ├── customers/
 │   └── <customer>/                          # = Company
 │       ├── company.yaml                     # Top level, lists categories and stock owners
@@ -84,7 +86,8 @@ master-data-definitions/
 ├── tests/
 │   ├── test_tracking.py     # Unit tests for tracking schema, merge and checks
 │   ├── test_owners.py       # Unit tests for stock-owner declaration and checks
-│   └── test_barcodes.py     # Unit tests for barcode schema, GTIN check and uniqueness
+│   ├── test_barcodes.py     # Unit tests for barcode schema, GTIN check and uniqueness
+│   └── test_load_units_and_conditions.py # Catalogs, storage conditions, carrier payload
 ├── docs/
 │   └── entity-glossary.md
 └── .github/workflows/validate.yaml   # CI pipeline
@@ -193,14 +196,19 @@ Full glossary: [`docs/entity-glossary.md`](docs/entity-glossary.md)
 
 ## Shared Vocabulary with Topology-as-Code
 
-`Topology-as-Code` already has an `elements/load_unit_types.yaml`
-catalog (`pallet_euro`, `carton`, `autostore_bin`, `order_tote`, …)
-describing physical carrier dimensions - conceptually this is packaging
-*master data*, not warehouse structure. Once this repo exists, decide
-whether `load_unit_types.yaml` should move here (and `Topology-as-Code`
-references it) or stay duplicated. **Don't solve this prematurely** -
-the two catalogs can drift apart safely for a while; only extract/merge
-once real duplication actually causes pain.
+**Decided:** this repo owns `elements/load_unit_types.yaml` (carriers
+incl. `tare_weight`) and `elements/storage_conditions.yaml`.
+`Topology-as-Code` keeps a **pinned, byte-identical copy** of both
+(its `elements/catalog_sources.yaml` names the source commit; its CI
+fails when the copy no longer matches that commit). Topology therefore
+keeps its storage-envelope checks against carrier dimensions and
+weights, and decides itself when to take over a new version here.
+
+After changing either catalog here, update the pin in
+`Topology-as-Code` (`python tools/sync_catalogs.py --source-root
+<path-to-this-repo> --ref <commit>`). The schemas use the same quantity
+shapes as Topology's `quantity.schema.json`, so the copy validates there
+unchanged.
 
 ## Open Scoping Question
 
@@ -237,8 +245,10 @@ separate-owners/separate-lifecycle reasoning used to keep
       `allow_mixed_lots` in putaway rules for an item with `lot: none`.
 - [ ] Distinguish expiry kinds (best-before / use-by / pharma expiry) once
       a customer needs different blocking behaviour per kind.
-- [ ] Decide the shared-vocabulary question above (`load_unit_types.yaml`
-      location) and the open scoping question (partners)
+- [x] ~~Decide the shared-vocabulary question (`load_unit_types.yaml`
+      location)~~ - owned here, pinned copy in `Topology-as-Code`.
+- [ ] Decide the rest of the open scoping question (suppliers, customers;
+      stock owners are done).
 - [ ] Cross-check `OrderOrchestration-as-Code`'s `material_request.item_id`
       and `Allocation-as-Code`'s `search_rule.applies_to.category`/
       `item_id` against this repo's real ids - same category of gap
