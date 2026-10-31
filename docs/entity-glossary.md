@@ -15,6 +15,7 @@ a path at either level and cascades validation downward automatically.
 
 | Term | Meaning |
 |---|---|
+| `owner` | A stock owner declared in `company.yaml` `owners` (`id`, `name`). Referenced by `item.owner` / `category.default_attributes.owner`, and by `Allocation-as-Code` `applies_to.owner`. See "Stock Owners". |
 | `item` | A single article/SKU's physical master facts (`structure/items.yaml`): id, description, dimensions, weight, `hazmat_classes` (references `elements/hazmat_classes.yaml`), `default_uom`. `default_uom` may be omitted to inherit the category's `default_attributes.default_uom` - `tools/compile.py` resolves this; `tools/validate.py` errors if neither is set. |
 | `tracking` | An item's lot, expiry and serial obligations (`schemas/tracking.schema.json`, on the item and on `category.default_attributes.tracking`). `lot`: `none` / `optional` (captured when the supplier provides one) / `required`. `expiry.tracked`, `expiry.min_remaining_at_receipt_days` (minimum remaining shelf life to accept a delivery), `expiry.total_shelf_life_days` (derive the expiry date from a production date). `serial.capture`: `none` / `outbound` (goods issue only) / `always` (from goods receipt on); serial numbers are per base unit, the first entry of the item's `uom_hierarchy`. Modeled after myWMS `ItemData` (`lotMandatory`, `bestBeforeMandatory`, `shelflife`, `serialNoRecordType`). |
 | `packaging` | One item's `each → case → pallet` conversion hierarchy (`structure/packaging.yaml`), ordered smallest-to-largest. Each step's `quantity_of_previous` is how many of the prior uom make up one of this uom; `packaging_material` references `elements/packaging_materials.yaml`. |
@@ -31,7 +32,7 @@ a path at either level and cascades validation downward automatically.
 `category.default_attributes` carries values every item in that category
 inherits unless it sets its own - the same pattern
 `Topology-as-Code`'s `storage_type.default_attributes` →
-`storage_point` exceptions uses. Two attributes are modeled this way:
+`storage_point` exceptions uses. Three attributes are modeled this way:
 
 - `default_uom`: `tools/compile.py` performs the merge (item's own value
   wins, falls back to the category's); `tools/validate.py` only checks
@@ -45,6 +46,31 @@ inherits unless it sets its own - the same pattern
   receipt minimum not above shelf life), the merge lives in one shared
   module, `tools/tracking.py`, used by both `compile.py` and
   `validate.py` - a second copy could drift.
+- `owner`: item's own value wins, falls back to the category's
+  `default_attributes.owner`; `tools/compile.py` writes the resolved
+  owner into the artifact.
+
+## Stock Owners
+
+A company operates the warehouse; `owners` in `company.yaml` lists whose
+stock it stores (e.g. the customers of a 3PL). Decided model: **each item
+belongs to exactly one owner** (same as myWMS `ItemData.client`). The
+same physical goods of two owners are two items, possibly with the same
+GTIN. Lot, expiry and serial obligations therefore differ per owner
+without extra logic.
+
+| Company declares owners? | Items |
+|---|---|
+| No (single-owner warehouse) | carry no owner - nothing to configure |
+| Yes | every item resolves to exactly one declared owner (own field or category default) |
+
+`tools/validate.py` checks this when validating from `company.yaml`; a
+category validated on its own skips it, because the owner list lives on
+the company. Owner-specific search and putaway rules, owner-dedicated
+zones and the no-mixing constraint live in `Allocation-as-Code`
+(`applies_to.owner`, `allow_mixed_owners`). That stock of one owner is
+never allocated to another owner's order is a runtime invariant, not
+configuration.
 
 ## Cross-Repo References
 

@@ -1,0 +1,18 @@
+# Multi-owner example: a 3PL operating one warehouse for two stock
+# owners. Validates against schemas/company.schema.json. Every item of
+# this company must resolve to one of the owners below - here each
+# category sets its owner once in default_attributes.owner.
+
+company:
+  id: "example_3pl"
+  name: "Example 3PL Logistics GmbH"
+
+  owners:
+    - id: "owner_alpha"
+      name: "Alpha Cosmetics AG"
+    - id: "owner_beta"
+      name: "Beta Machinery GmbH"
+
+  categories:
+    - "categories/alpha_cosmetics/category.yaml"
+    - "categories/beta_spare_parts/category.yaml"

@@ -1,0 +1,6 @@
+# Owner inherited from category.yaml (owner_alpha).
+
+items:
+  - id: "ALPHA_001"
+    description: "Hand Cream 75ml"
+    weight: { value: 0.09, unit: "kg" }

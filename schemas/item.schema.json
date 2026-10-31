@@ -8,6 +8,10 @@
   "properties": {
     "id": { "type": "string" },
     "description": { "type": "string" },
+    "owner": {
+      "type": "string",
+      "description": "Stock owner of this item: an id from company.yaml owners. Each item belongs to exactly one owner; the same physical goods of two owners are two items. Omit to inherit the category's default_attributes.owner. Only allowed when the company declares owners."
+    },
     "dimensions": {
       "type": "object",
       "properties": {

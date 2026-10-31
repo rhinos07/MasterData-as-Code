@@ -65,7 +65,7 @@ master-data-definitions/
 │   └── hazmat_classes.yaml          # Hazardous material / compliance classifications
 ├── customers/
 │   └── <customer>/                          # = Company
-│       ├── company.yaml                     # Top level, lists categories (and partners, see below)
+│       ├── company.yaml                     # Top level, lists categories and stock owners
 │       └── categories/
 │           └── <category>/                  # = Product category/family
 │               ├── category.yaml            # Imports structure/strategies below
@@ -81,7 +81,8 @@ master-data-definitions/
 │   │                         #   item/UOM instances (build/ output)
 │   └── tracking.py          # Shared tracking-obligation merge (validate + compile)
 ├── tests/
-│   └── test_tracking.py     # Unit tests for tracking schema, merge and checks
+│   ├── test_tracking.py     # Unit tests for tracking schema, merge and checks
+│   └── test_owners.py       # Unit tests for stock-owner declaration and checks
 ├── docs/
 │   └── entity-glossary.md
 └── .github/workflows/validate.yaml   # CI pipeline
@@ -145,6 +146,11 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   item ids `WMS-POC`'s scenarios and `Allocation-as-Code`'s examples
   already use, kept consistent on purpose rather than inventing new ids
   per repo.
+- `customers/example_3pl/` - multi-owner example: a 3PL storing goods of
+  two owners (`owner_alpha`, `owner_beta`) declared in `company.yaml`.
+  Each category sets its owner once in `default_attributes.owner`;
+  `ALPHA_001` and `BETA_001` inherit it. `example_customer` stays a
+  single-owner warehouse and needs no owner configuration at all.
 
 ## Core Concepts (Quick Reference)
 
@@ -154,6 +160,10 @@ python tools/compile.py customers/example_customer/categories/beverages/category
 - **item** — a single article/SKU: id, description, physical dimensions,
   weight, `hazmat_classes` (references `elements/hazmat_classes.yaml`),
   default UOM, `tracking` obligations.
+- **owner** — the stock owner an item belongs to, for multi-owner
+  warehouses (e.g. a 3PL). Declared in `company.yaml` `owners`; each item
+  belongs to exactly one, inherited from the category. Single-owner
+  warehouses omit it entirely.
 - **tracking** — which identifying data stock of an item must carry: lot
   (`none`/`optional`/`required`), expiry date (tracked yes/no, minimum
   remaining shelf life at receipt, total shelf life), serial number
@@ -191,7 +201,10 @@ Should trading-partner master data (customers, suppliers) live in this
 repo alongside item master data, or in its own repo? Real-world MDM
 often splits these (different owning teams - Procurement owns supplier
 master, Sales/Credit owns customer master, Merchandising owns item
-master). This README assumes item master only; if partners join later,
+master). Stock owners are the first partner kind modeled: as an
+`owners` list on `company.yaml`, because items reference them and a
+separate repo would add a cross-repo reference for every item. Suppliers
+and customers remain open; if partners join later,
 consider `customers/<customer>/partners/` as a parallel top-level
 sibling to `categories/`, or a fully separate repo - same
 separate-owners/separate-lifecycle reasoning used to keep

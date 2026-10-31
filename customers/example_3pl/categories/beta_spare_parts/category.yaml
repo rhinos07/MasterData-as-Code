@@ -1,0 +1,15 @@
+# All items of this category belong to owner_beta (inherited).
+# Validates against schemas/category.schema.json
+
+api_version: "masterdata-as-code/v1"
+
+category:
+  id: "beta_spare_parts"
+  name: "Beta Spare Parts"
+
+  default_attributes:
+    default_uom: "each"
+    owner: "owner_beta"
+
+  imports:
+    - "structure/items.yaml"

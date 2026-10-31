@@ -1,0 +1,20 @@
+# All items of this category belong to owner_alpha (inherited).
+# Validates against schemas/category.schema.json
+
+api_version: "masterdata-as-code/v1"
+
+category:
+  id: "alpha_cosmetics"
+  name: "Alpha Cosmetics"
+
+  default_attributes:
+    default_uom: "each"
+    owner: "owner_alpha"
+    tracking:
+      lot: "required"
+      expiry:
+        tracked: true
+        min_remaining_at_receipt_days: 180
+
+  imports:
+    - "structure/items.yaml"

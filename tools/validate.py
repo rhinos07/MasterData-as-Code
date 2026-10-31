@@ -204,6 +204,46 @@ def check_tracking(path: Path, category_data: dict, packaged_item_ids: set[str])
     return errors
 
 
+def check_item_owners(path: Path, category_data: dict, owner_ids: set[str] | None) -> list[str]:
+    """Checks each item's resolved owner (own field, else category
+    default_attributes.owner) against the company's declared owners.
+    owner_ids None = category validated on its own, company unknown: the
+    check is skipped. Empty set = company declares no owners (single-owner
+    warehouse): no item may carry one. Non-empty = every item must
+    resolve to one of them."""
+    errors: list[str] = []
+    if owner_ids is None:
+        return errors
+    data = load_yaml(path)
+    if not data:
+        return errors
+
+    category = category_data.get("category", {})
+    category_owner = (category.get("default_attributes") or {}).get("owner")
+    if category_owner and category_owner not in owner_ids:
+        errors.append(
+            f"{path}: category '{category.get('id', '?')}': default_attributes.owner '{category_owner}' not declared in company.yaml owners"
+        )
+
+    for item in data.get("items", []):
+        item_id = item.get("id", "?")
+        owner = item.get("owner") or category_owner
+        if not owner_ids:
+            if owner:
+                errors.append(
+                    f"{path}: item '{item_id}': owner '{owner}' set but company.yaml declares no owners"
+                )
+        elif not owner:
+            errors.append(
+                f"{path}: item '{item_id}': no owner set and category has no default_attributes.owner, but company.yaml declares owners"
+            )
+        elif item.get("owner") and owner not in owner_ids:
+            errors.append(
+                f"{path}: item '{item_id}': owner '{owner}' not declared in company.yaml owners"
+            )
+    return errors
+
+
 def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, set[str]]) -> list[str]:
     """Checks packaging.yaml's item_id -> items.yaml, uom_hierarchy[].uom
     -> uom_types.yaml, and .packaging_material -> packaging_materials.yaml."""
@@ -248,8 +288,14 @@ def check_item_id_refs(path: Path, list_key: str, item_ids: set[str], extra_fiel
     return errors
 
 
-def validate_category_file(category_file: Path, element_ids: dict[str, set[str]] = {}) -> list[str]:
-    """Validates a single category-level category.yaml and everything it imports."""
+def validate_category_file(
+    category_file: Path,
+    element_ids: dict[str, set[str]] = {},
+    owner_ids: set[str] | None = None,
+) -> list[str]:
+    """Validates a single category-level category.yaml and everything it
+    imports. owner_ids = the company's declared owners when called from
+    validate_company_file, None when the category is validated alone."""
     if not category_file.exists():
         return [f"category file missing: {category_file}"]
 
@@ -293,6 +339,7 @@ def validate_category_file(category_file: Path, element_ids: dict[str, set[str]]
         }
     if "items.yaml" in imports:
         all_errors += check_tracking(imports["items.yaml"], category_data, packaged_item_ids)
+        all_errors += check_item_owners(imports["items.yaml"], category_data, owner_ids)
     if "sourcing.yaml" in imports:
         all_errors += check_item_id_refs(imports["sourcing.yaml"], "sourcing", item_ids)
     if "lifecycle.yaml" in imports:
@@ -305,8 +352,15 @@ def validate_company_file(company_file: Path, element_ids: dict[str, set[str]] =
     """Validates a company.yaml and cascades into every category it lists."""
     all_errors = validate_file(company_file, "company.schema.json")
 
+    owners = (load_yaml(company_file) or {}).get("company", {}).get("owners") or []
+    owner_list = [o.get("id") for o in owners if o.get("id")]
+    duplicates = sorted({o for o in owner_list if owner_list.count(o) > 1})
+    if duplicates:
+        all_errors.append(f"{company_file}: duplicate owner ids: {duplicates}")
+    owner_ids = set(owner_list)
+
     for category_file in collect_relative_refs(company_file, "company", "categories"):
-        all_errors += validate_category_file(category_file, element_ids)
+        all_errors += validate_category_file(category_file, element_ids, owner_ids)
 
     return all_errors
 
