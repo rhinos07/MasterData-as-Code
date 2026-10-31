@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Resolves each item's default_uom (own value, or inherited from the
-category's default_attributes) into a flat, concrete items artifact.
+Resolves each item's default_uom and tracking obligations (own value, or
+inherited from the category's default_attributes) into a flat, concrete
+items artifact.
 Run tools/validate.py first; this script assumes schema-valid input.
 
 Usage:
@@ -15,6 +16,7 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from tracking import resolve_tracking  # noqa: E402
 from validate import collect_imports, load_yaml  # noqa: E402
 
 # Versioned independently of the source api_version: a consumer of the
@@ -26,7 +28,9 @@ ARTIFACT_API_VERSION = "masterdata-as-code/artifact-v1"
 
 def compile_category(category_file: Path) -> list[dict]:
     category_data = load_yaml(category_file)["category"]
-    category_default_uom = (category_data.get("default_attributes") or {}).get("default_uom")
+    category_defaults = category_data.get("default_attributes") or {}
+    category_default_uom = category_defaults.get("default_uom")
+    category_tracking = category_defaults.get("tracking")
 
     items: list[dict] = []
     for imported in collect_imports(category_file):
@@ -35,6 +39,7 @@ def compile_category(category_file: Path) -> list[dict]:
         for item in (load_yaml(imported) or {}).get("items", []):
             compiled = dict(item)
             compiled["default_uom"] = item.get("default_uom") or category_default_uom
+            compiled["tracking"] = resolve_tracking(item, category_tracking)
             compiled["category"] = category_data["id"]
             items.append(compiled)
 

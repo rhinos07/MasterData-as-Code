@@ -70,15 +70,18 @@ master-data-definitions/
 │           └── <category>/                  # = Product category/family
 │               ├── category.yaml            # Imports structure/strategies below
 │               ├── structure/                       # Item facts (stable)
-│               │   ├── items.yaml                   # Item master: id, dimensions, weight, hazmat class
+│               │   ├── items.yaml                   # Item master: id, dimensions, weight, hazmat class, tracking
 │               │   └── packaging.yaml               # UOM/packaging hierarchy: each -> case -> pallet
 │               └── strategies/                       # Process rules (changes often)
 │                   ├── sourcing.yaml                 # Preferred/alternate supplier per item, lead times
 │                   └── lifecycle.yaml                # Seasonal windows, active/discontinued, substitution
 ├── tools/
 │   ├── validate.py          # Validation script (schema + consistency checks)
-│   └── compile.py           # Expands any generator syntax into concrete
-│                             #   item/UOM instances (build/ output)
+│   ├── compile.py           # Expands any generator syntax into concrete
+│   │                         #   item/UOM instances (build/ output)
+│   └── tracking.py          # Shared tracking-obligation merge (validate + compile)
+├── tests/
+│   └── test_tracking.py     # Unit tests for tracking schema, merge and checks
 ├── docs/
 │   └── entity-glossary.md
 └── .github/workflows/validate.yaml   # CI pipeline
@@ -134,7 +137,11 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   `Allocation-as-Code`'s `SEARCH_ITEM_003_FEFO` rule scopes to, since its
   short shelf life is exactly why that rule needs `FEFO`), and
   `ITEM_004` (hazmat-classified, case-only - `default_uom: "case"`
-  overrides the category default). `ITEM_001`-`ITEM_003` are the same
+  overrides the category default). The category sets `tracking` for all
+  four (lot required, expiry tracked, 90 days minimum remaining at
+  receipt, 365 days shelf life); `ITEM_003` overrides only the two day
+  values (60 / 270), `ITEM_004` switches expiry off and keeps the
+  inherited lot obligation. `ITEM_001`-`ITEM_003` are the same
   item ids `WMS-POC`'s scenarios and `Allocation-as-Code`'s examples
   already use, kept consistent on purpose rather than inventing new ids
   per repo.
@@ -146,7 +153,12 @@ python tools/compile.py customers/example_customer/categories/beverages/category
   items inherit unless they override them.
 - **item** — a single article/SKU: id, description, physical dimensions,
   weight, `hazmat_classes` (references `elements/hazmat_classes.yaml`),
-  default UOM.
+  default UOM, `tracking` obligations.
+- **tracking** — which identifying data stock of an item must carry: lot
+  (`none`/`optional`/`required`), expiry date (tracked yes/no, minimum
+  remaining shelf life at receipt, total shelf life), serial number
+  capture (`none`/`outbound`/`always`). Inherited from the category
+  field by field.
 - **packaging hierarchy / UOM conversion** — how many `each` per `case`,
   `case` per `pallet`, etc. for an item - referenced by
   `Topology-as-Code`'s `replenishment_strategy.unit_conversion` and by
@@ -193,11 +205,18 @@ separate-owners/separate-lifecycle reasoning used to keep
 - [x] ~~Build `customers/example_customer/` with a worked category +
       items~~ - `categories/beverages/` with 4 items, see "Examples".
 - [x] ~~`tools/validate.py` / `tools/compile.py`~~ - done. `compile.py`
-      is intentionally small: it only resolves `default_uom` inheritance
-      (item's own value, falling back to the category's
-      `default_attributes.default_uom`) into a flat items artifact -
+      is intentionally small: it only resolves `default_uom` and
+      `tracking` inheritance (item's own value, falling back to the
+      category's `default_attributes`) into a flat items artifact -
       there's no generator syntax to expand here, unlike
       `Topology-as-Code`'s `storage_point_generator`.
+- [ ] Cross-repo checks for `tracking` (not implemented, same gap as the
+      item ids below): `Allocation-as-Code` FEFO or
+      `min_remaining_shelf_life_days` on an item without tracked expiry;
+      an outbound shelf-life floor above `min_remaining_at_receipt_days`;
+      `allow_mixed_lots` in putaway rules for an item with `lot: none`.
+- [ ] Distinguish expiry kinds (best-before / use-by / pharma expiry) once
+      a customer needs different blocking behaviour per kind.
 - [ ] Decide the shared-vocabulary question above (`load_unit_types.yaml`
       location) and the open scoping question (partners)
 - [ ] Cross-check `OrderOrchestration-as-Code`'s `material_request.item_id`

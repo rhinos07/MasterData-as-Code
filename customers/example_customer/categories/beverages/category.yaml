@@ -9,6 +9,16 @@ category:
 
   default_attributes:
     default_uom: "each"   # inherited by items below that don't set their own
+    # Inherited field by field - an item overrides only what differs.
+    # Example values, not taken from a real customer.
+    tracking:
+      lot: "required"
+      expiry:
+        tracked: true
+        min_remaining_at_receipt_days: 90
+        total_shelf_life_days: 365
+      serial:
+        capture: "none"
 
   imports:
     - "structure/items.yaml"

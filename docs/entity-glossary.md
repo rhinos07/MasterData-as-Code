@@ -16,6 +16,7 @@ a path at either level and cascades validation downward automatically.
 | Term | Meaning |
 |---|---|
 | `item` | A single article/SKU's physical master facts (`structure/items.yaml`): id, description, dimensions, weight, `hazmat_classes` (references `elements/hazmat_classes.yaml`), `default_uom`. `default_uom` may be omitted to inherit the category's `default_attributes.default_uom` - `tools/compile.py` resolves this; `tools/validate.py` errors if neither is set. |
+| `tracking` | An item's lot, expiry and serial obligations (`schemas/tracking.schema.json`, on the item and on `category.default_attributes.tracking`). `lot`: `none` / `optional` (captured when the supplier provides one) / `required`. `expiry.tracked`, `expiry.min_remaining_at_receipt_days` (minimum remaining shelf life to accept a delivery), `expiry.total_shelf_life_days` (derive the expiry date from a production date). `serial.capture`: `none` / `outbound` (goods issue only) / `always` (from goods receipt on); serial numbers are per base unit, the first entry of the item's `uom_hierarchy`. Modeled after myWMS `ItemData` (`lotMandatory`, `bestBeforeMandatory`, `shelflife`, `serialNoRecordType`). |
 | `packaging` | One item's `each → case → pallet` conversion hierarchy (`structure/packaging.yaml`), ordered smallest-to-largest. Each step's `quantity_of_previous` is how many of the prior uom make up one of this uom; `packaging_material` references `elements/packaging_materials.yaml`. |
 
 ## Process Rules
@@ -30,12 +31,20 @@ a path at either level and cascades validation downward automatically.
 `category.default_attributes` carries values every item in that category
 inherits unless it sets its own - the same pattern
 `Topology-as-Code`'s `storage_type.default_attributes` →
-`storage_point` exceptions uses. Currently only `default_uom` is
-modeled this way; `tools/compile.py` performs the actual merge (item's
-own value wins, falls back to the category's). `tools/validate.py` only
-checks that *some* value resolves - it does not perform the merge
-itself, mirroring how `Topology-as-Code` keeps merge logic in
-`compile.py`, not `validate.py`.
+`storage_point` exceptions uses. Two attributes are modeled this way:
+
+- `default_uom`: `tools/compile.py` performs the merge (item's own value
+  wins, falls back to the category's); `tools/validate.py` only checks
+  that *some* value resolves.
+- `tracking`: merged field by field, nested objects per sub-field - an
+  item can override `expiry.min_remaining_at_receipt_days` alone and
+  still inherit `expiry.tracked`. Unset fields fall back to `lot: none`,
+  `expiry.tracked: false`, `serial.capture: none`. An item that sets
+  `expiry.tracked: false` drops the category's inherited day values.
+  Because `tools/validate.py` must check the *resolved* values (e.g.
+  receipt minimum not above shelf life), the merge lives in one shared
+  module, `tools/tracking.py`, used by both `compile.py` and
+  `validate.py` - a second copy could drift.
 
 ## Cross-Repo References
 
