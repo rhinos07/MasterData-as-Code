@@ -9,6 +9,7 @@ category:
 
   default_attributes:
     default_uom: "each"   # inherited by items below that don't set their own
+    storage_condition: "ambient"
     # Inherited field by field - an item overrides only what differs.
     # Example values, not taken from a real customer.
     tracking:

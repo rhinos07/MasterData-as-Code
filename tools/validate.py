@@ -33,7 +33,11 @@ ELEMENT_CATALOGS = {
     "uom_types.yaml": ("uom-type.schema.json", "uom_types"),
     "packaging_materials.yaml": ("packaging-material.schema.json", "packaging_materials"),
     "hazmat_classes.yaml": ("hazmat-class.schema.json", "hazmat_classes"),
+    "load_unit_types.yaml": ("load-unit-type.schema.json", "load_unit_types"),
+    "storage_conditions.yaml": ("storage-condition.schema.json", "storage_conditions"),
 }
+
+MASS_TO_KG = {"kg": 1.0, "g": 0.001, "t": 1000.0}
 
 
 def load_yaml(path: Path) -> dict:
@@ -146,7 +150,10 @@ def check_item_refs(path: Path, category_data: dict, element_ids: dict[str, set[
 
     uom_ids = element_ids.get("uom_types", set())
     hazmat_ids = element_ids.get("hazmat_classes", set())
-    category_default_uom = (category_data.get("category", {}).get("default_attributes") or {}).get("default_uom")
+    category_defaults = category_data.get("category", {}).get("default_attributes") or {}
+    category_default_uom = category_defaults.get("default_uom")
+    category_condition = category_defaults.get("storage_condition")
+    condition_ids = element_ids.get("storage_conditions", set())
 
     for item in data.get("items", []):
         item_id = item.get("id", "?")
@@ -159,6 +166,10 @@ def check_item_refs(path: Path, category_data: dict, element_ids: dict[str, set[
         for hz in item.get("hazmat_classes", []):
             if hazmat_ids and hz not in hazmat_ids:
                 errors.append(f"{path}: item '{item_id}': hazmat_classes '{hz}' not found in elements/hazmat_classes.yaml")
+
+        condition = item.get("storage_condition") or category_condition
+        if condition and condition_ids and condition not in condition_ids:
+            errors.append(f"{path}: item '{item_id}': storage_condition '{condition}' not found in elements/storage_conditions.yaml")
 
     return errors
 
@@ -269,6 +280,11 @@ def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, 
             if material and material_ids and material not in material_ids:
                 errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: packaging_material '{material}' not found in elements/packaging_materials.yaml")
 
+            load_unit = step.get("load_unit_type")
+            lu_ids = element_ids.get("load_unit_types", set())
+            if load_unit and lu_ids and load_unit not in lu_ids:
+                errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: load_unit_type '{load_unit}' not found in elements/load_unit_types.yaml")
+
             barcodes = step.get("barcodes", [])
             for barcode in barcodes:
                 code = str(barcode.get("code", ""))
@@ -277,6 +293,43 @@ def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, 
             if sum(1 for b in barcodes if b.get("primary")) > 1:
                 errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: more than one barcode marked primary")
 
+    return errors
+
+
+def check_load_unit_payload(path: Path, items_data: dict | None) -> list[str]:
+    """For each packaging level with a load_unit_type: goods weight of the
+    level (item weight x base units in that level) must not exceed the
+    carrier's max_weight. Tare is not added - max_weight is the carrier's
+    design load for goods (schemas/load-unit-type.schema.json). Skipped
+    where the item has no weight or the carrier no max_weight."""
+    errors: list[str] = []
+    data = load_yaml(path)
+    if not data:
+        return errors
+    catalog = load_yaml(ELEMENTS_DIR / "load_unit_types.yaml") or {}
+    carriers = {c["id"]: c for c in catalog.get("load_unit_types", []) if c.get("id")}
+    weights = {}
+    for item in (items_data or {}).get("items", []):
+        weight = item.get("weight")
+        if weight and weight.get("unit") in MASS_TO_KG:
+            weights[item.get("id")] = weight["value"] * MASS_TO_KG[weight["unit"]]
+
+    for entry in data.get("packaging", []):
+        item_id = entry.get("item_id", "?")
+        base_units = 1
+        for i, step in enumerate(entry.get("uom_hierarchy", [])):
+            if i > 0:
+                base_units *= step.get("quantity_of_previous", 1)
+            carrier = carriers.get(step.get("load_unit_type"))
+            if not carrier or item_id not in weights or not carrier.get("max_weight"):
+                continue
+            limit = carrier["max_weight"]["value"] * MASS_TO_KG.get(carrier["max_weight"]["unit"], 1.0)
+            goods = weights[item_id] * base_units
+            if goods > limit + 1e-9:
+                errors.append(
+                    f"{path}: packaging '{item_id}' uom_hierarchy[{i}] ({step.get('uom')}): goods weight {goods:g} kg "
+                    f"({base_units} x {weights[item_id]:g} kg) exceeds load_unit_type '{carrier['id']}' max_weight {limit:g} kg"
+                )
     return errors
 
 
@@ -357,6 +410,9 @@ def validate_category_file(
     packaged_item_ids: set[str] = set()
     if "packaging.yaml" in imports:
         all_errors += check_packaging_refs(imports["packaging.yaml"], item_ids, element_ids)
+        all_errors += check_load_unit_payload(
+            imports["packaging.yaml"], load_yaml(imports["items.yaml"]) if "items.yaml" in imports else None
+        )
         packaging_data = load_yaml(imports["packaging.yaml"]) or {}
         packaged_item_ids = {
             p.get("item_id") for p in packaging_data.get("packaging", [])

@@ -30,6 +30,8 @@ items:
       depth: { value: 70, unit: "mm" }
       height: { value: 210, unit: "mm" }
     weight: { value: 0.53, unit: "kg" }
+    # Needs refrigeration - Topology-as-Code's COLD_ZONE_B (chilled).
+    storage_condition: "chilled"
     # Shorter shelf life than the category default; lot and
     # expiry.tracked are inherited. Allocation-as-Code's 30-day outbound
     # floor stays below the 60-day receipt minimum.

@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://masterdata-as-code.internal/schemas/load-unit-type.schema.json",
+  "title": "Load Unit Type",
+  "description": "Physical definition of a load unit (pallet, container, carton). Owned by MasterData-as-Code; Topology-as-Code keeps a pinned copy of elements/load_unit_types.yaml (see its elements/catalog_sources.yaml) for its storage-envelope checks. Quantity shapes match Topology-as-Code's quantity.schema.json so the copy validates there unchanged.",
+  "type": "object",
+  "required": [
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Unique ID, e.g. 'pallet_euro'"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "Footprint/height of the empty carrier itself.",
+      "properties": {
+        "width": {
+          "$ref": "#/definitions/length"
+        },
+        "depth": {
+          "$ref": "#/definitions/length"
+        },
+        "height": {
+          "$ref": "#/definitions/length"
+        }
+      },
+      "required": [
+        "width",
+        "depth",
+        "height"
+      ],
+      "additionalProperties": false
+    },
+    "max_weight": {
+      "$ref": "#/definitions/mass",
+      "description": "Design load of the carrier: the goods it may carry, without its own tare."
+    },
+    "tare_weight": {
+      "$ref": "#/definitions/mass",
+      "description": "Own weight of the empty carrier. Goods weight + tare = gross weight of a loaded unit."
+    },
+    "stackable": {
+      "type": "boolean"
+    },
+    "volume": {
+      "$ref": "#/definitions/volume",
+      "description": "Nominal loaded volume; can differ from width*depth*height of the empty carrier."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "length": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "m",
+            "cm",
+            "mm"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "mass": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "kg",
+            "g",
+            "t"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "volume": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "m3",
+            "l"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
