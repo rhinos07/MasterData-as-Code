@@ -1,0 +1,7 @@
+# Owner inherited from category.yaml (owner_beta). No tracking set:
+# lot none, no expiry, no serial numbers (defaults).
+
+items:
+  - id: "BETA_001"
+    description: "Bearing 6204-2RS"
+    weight: { value: 0.11, unit: "kg" }

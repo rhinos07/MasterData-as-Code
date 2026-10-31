@@ -19,7 +19,11 @@
         "default_attributes": {
           "type": "object",
           "properties": {
-            "tracking": { "$ref": "tracking.schema.json" }
+            "tracking": { "$ref": "tracking.schema.json" },
+            "owner": {
+              "type": "string",
+              "description": "Owner every item of this category inherits unless it sets its own - see item.schema.json owner."
+            }
           },
           "additionalProperties": true,
           "description": "Shared attributes every item in this category inherits unless it overrides them - same pattern as Topology-as-Code's storage_type.default_attributes -> storage_point exceptions."
