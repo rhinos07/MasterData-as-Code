@@ -30,6 +30,30 @@
           "packaging_material": {
             "type": "string",
             "description": "References an id in elements/packaging_materials.yaml."
+          },
+          "barcodes": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Codes printed on this packaging level (each, case, pallet), used to identify the item and its quantity on scan (myWMS ItemDataNumber per PackagingUnit). A code is unique per stock owner across the whole company - in a single-owner company simply across the company; see tools/validate.py.",
+            "items": {
+              "type": "object",
+              "required": ["code", "type"],
+              "properties": {
+                "code": { "type": "string", "minLength": 1 },
+                "type": {
+                  "type": "string",
+                  "enum": ["gtin", "internal"],
+                  "description": "gtin = GS1 GTIN-8/12/13/14, digits only, check digit verified by tools/validate.py. internal = any code assigned by the owner or warehouse."
+                },
+                "primary": {
+                  "type": "boolean",
+                  "description": "The code to print on labels when several exist for this packaging level. At most one per level."
+                }
+              },
+              "additionalProperties": false,
+              "if": { "properties": { "type": { "const": "gtin" } } },
+              "then": { "properties": { "code": { "pattern": "^([0-9]{8}|[0-9]{12,14})$" } } }
+            }
           }
         },
         "additionalProperties": false

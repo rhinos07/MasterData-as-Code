@@ -1,24 +1,40 @@
 # UOM/packaging hierarchy: each -> case -> pallet. Validates against
 # schemas/packaging.schema.json (per entry).
+#
+# Barcodes: example GTINs use the GS1 prefix range 200-299 (restricted
+# circulation, never assigned to real trade items), so they cannot clash
+# with real products. Case/pallet GTIN-14 = indicator digit + the each
+# GTIN-13 body, recomputed check digit.
 
 packaging:
   - item_id: "ITEM_001"
     uom_hierarchy:
       - uom: "each"
         quantity_of_previous: 1
+        barcodes:
+          - { code: "2000000000015", type: "gtin", primary: true }
       - uom: "case"
         quantity_of_previous: 6
         packaging_material: "shrink_film"
+        barcodes:
+          - { code: "12000000000012", type: "gtin", primary: true }
+          - { code: "WAT-CS6", type: "internal" }
       - uom: "pallet"
         quantity_of_previous: 80
         packaging_material: "stretch_wrap_pallet"
+        barcodes:
+          - { code: "22000000000019", type: "gtin" }
 
   - item_id: "ITEM_002"
     uom_hierarchy:
       - uom: "each"
         quantity_of_previous: 1
+        barcodes:
+          - { code: "2000000000022", type: "gtin" }
       - uom: "case"
         quantity_of_previous: 24
+        barcodes:
+          - { code: "12000000000029", type: "gtin" }
         packaging_material: "corrugated_carton"
       - uom: "pallet"
         quantity_of_previous: 60

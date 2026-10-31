@@ -23,6 +23,7 @@ from referencing.jsonschema import DRAFT7
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tracking import EXPIRY_DAY_FIELDS, resolve_tracking  # noqa: E402
+from barcodes import collect_barcodes, find_duplicate_codes, gtin_check_digit_ok  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO_ROOT / "schemas"
@@ -268,7 +269,31 @@ def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, 
             if material and material_ids and material not in material_ids:
                 errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: packaging_material '{material}' not found in elements/packaging_materials.yaml")
 
+            barcodes = step.get("barcodes", [])
+            for barcode in barcodes:
+                code = str(barcode.get("code", ""))
+                if barcode.get("type") == "gtin" and code.isdigit() and not gtin_check_digit_ok(code):
+                    errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: GTIN '{code}' has a wrong check digit")
+            if sum(1 for b in barcodes if b.get("primary")) > 1:
+                errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: more than one barcode marked primary")
+
     return errors
+
+
+def category_barcode_records(category_file: Path) -> list[dict]:
+    """All barcodes of a category with each item's resolved owner (own
+    field, else category default_attributes.owner, else None)."""
+    category = (load_yaml(category_file) or {}).get("category", {})
+    category_owner = (category.get("default_attributes") or {}).get("owner")
+    item_owners: dict[str, str | None] = {}
+    records: list[dict] = []
+    imported = {p.name: p for p in collect_imports(category_file) if p.exists()}
+    if "items.yaml" in imported:
+        for item in (load_yaml(imported["items.yaml"]) or {}).get("items", []):
+            item_owners[item.get("id")] = item.get("owner") or category_owner
+    if "packaging.yaml" in imported:
+        records = collect_barcodes(load_yaml(imported["packaging.yaml"]), item_owners, imported["packaging.yaml"])
+    return records
 
 
 def check_item_id_refs(path: Path, list_key: str, item_ids: set[str], extra_fields: list[str] = ()) -> list[str]:
@@ -340,6 +365,12 @@ def validate_category_file(
     if "items.yaml" in imports:
         all_errors += check_tracking(imports["items.yaml"], category_data, packaged_item_ids)
         all_errors += check_item_owners(imports["items.yaml"], category_data, owner_ids)
+
+    # Validated on its own (no company context): check barcode
+    # uniqueness within this category. From validate_company_file the
+    # same check runs once across all categories instead.
+    if owner_ids is None:
+        all_errors += find_duplicate_codes(category_barcode_records(category_file))
     if "sourcing.yaml" in imports:
         all_errors += check_item_id_refs(imports["sourcing.yaml"], "sourcing", item_ids)
     if "lifecycle.yaml" in imports:
@@ -359,8 +390,16 @@ def validate_company_file(company_file: Path, element_ids: dict[str, set[str]] =
         all_errors.append(f"{company_file}: duplicate owner ids: {duplicates}")
     owner_ids = set(owner_list)
 
+    barcode_records: list[dict] = []
     for category_file in collect_relative_refs(company_file, "company", "categories"):
         all_errors += validate_category_file(category_file, element_ids, owner_ids)
+        if category_file.exists():
+            barcode_records += category_barcode_records(category_file)
+
+    # Barcodes are unique per owner across the whole company - the same
+    # GTIN may exist once per owner (Variante A: same goods of two owners
+    # are two items).
+    all_errors += find_duplicate_codes(barcode_records)
 
     return all_errors
 
