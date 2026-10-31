@@ -6,3 +6,4 @@ company:
 
   categories:
     - "categories/beverages/category.yaml"
+    - "categories/household/category.yaml"
