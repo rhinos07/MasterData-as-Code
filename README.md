@@ -68,6 +68,7 @@ master-data-definitions/
 ├── customers/
 │   └── <customer>/                          # = Company
 │       ├── company.yaml                     # Top level, lists categories and stock owners
+│       ├── load_unit_types.yaml             # Optional: the customer's own carriers (extends elements/)
 │       └── categories/
 │           └── <category>/                  # = Product category/family
 │               ├── category.yaml            # Imports structure/strategies below
@@ -87,7 +88,8 @@ master-data-definitions/
 │   ├── test_tracking.py     # Unit tests for tracking schema, merge and checks
 │   ├── test_owners.py       # Unit tests for stock-owner declaration and checks
 │   ├── test_barcodes.py     # Unit tests for barcode schema, GTIN check and uniqueness
-│   └── test_load_units_and_conditions.py # Catalogs, storage conditions, carrier payload
+│   ├── test_load_units_and_conditions.py # Catalogs, storage conditions, carrier payload
+│   └── test_customer_load_units.py # Customer-level carrier catalog
 ├── docs/
 │   └── entity-glossary.md
 └── .github/workflows/validate.yaml   # CI pipeline
@@ -209,6 +211,34 @@ After changing either catalog here, update the pin in
 <path-to-this-repo> --ref <commit>`). The schemas use the same quantity
 shapes as Topology's `quantity.schema.json`, so the copy validates there
 unchanged.
+
+### Global and customer-level carriers
+
+Carriers are defined on two levels:
+
+| Level | File | Holds | Pinned in Topology |
+|---|---|---|---|
+| Global | `elements/load_unit_types.yaml` | Standards and vendor standards: EUR/industrial pallet, mesh box, AutoStore bins (`autostore_bin_220`, `_330`, `_425`) | yes |
+| Customer | `customers/<customer>/load_unit_types.yaml` | Carriers that exist only for this customer, e.g. an owner's returnable crate | no |
+
+A new customer carrier therefore needs no change to `elements/` or to
+the schema. Rules (`tools/validate.py`):
+
+- Same schema as the global catalog (`load-unit-type.schema.json`).
+- A customer id must not repeat a global id, and must be unique in the
+  file. The customer extends the catalog; it does not redefine a
+  standard carrier.
+- Packaging levels of that customer can reference both levels; the
+  payload check (goods weight <= `max_weight`) applies to both.
+
+Topology-as-Code checks storage types only against its pinned global
+copy. Customer carrier ids in a storage type are checked at site level
+by Warehouse-as-Code (`tools/cross_refs.py`), which knows the site's
+MasterData company.
+
+AutoStore has exactly three bin types, one per height. The former
+`autostore_bin` (no height) is removed; Topology-as-Code keeps it in its
+pinned copy until it re-pins and switches to the height variants.
 
 ## Open Scoping Question
 

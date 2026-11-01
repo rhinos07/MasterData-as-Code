@@ -1,0 +1,21 @@
+# Customer-level carriers of this company. Extends the global catalog
+# elements/load_unit_types.yaml: use global ids for standard carriers
+# (pallets, AutoStore bins), add only carriers that exist for this
+# customer. Ids must not repeat a global id (tools/validate.py checks it).
+# Validates against schemas/load-unit-type.schema.json (per entry).
+# Topology-as-Code checks these ids at site level only (Warehouse-as-Code
+# tools/cross_refs.py); its pinned catalog copy holds the global ids.
+#
+# Values are examples.
+
+load_unit_types:
+  - id: "beta_parts_crate"
+    description: "Returnable plastic crate of owner Beta for small spare parts, 600x400mm"
+    dimensions:
+      width: { value: 0.4, unit: "m" }
+      depth: { value: 0.6, unit: "m" }
+      height: { value: 0.28, unit: "m" }
+    max_weight: { value: 25, unit: "kg" }
+    tare_weight: { value: 2, unit: "kg" }
+    stackable: true
+    volume: { value: 0.06, unit: "m3" }

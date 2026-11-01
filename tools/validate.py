@@ -139,6 +139,69 @@ def validate_element_catalog(path: Path, schema_name: str, list_key: str) -> lis
     return errors
 
 
+CUSTOMER_LOAD_UNITS_FILE = "load_unit_types.yaml"
+
+
+def customer_load_units_file(company_file: Path) -> Path:
+    """Customer-level carrier catalog: customers/<c>/load_unit_types.yaml,
+    next to company.yaml. Optional; extends elements/load_unit_types.yaml."""
+    return company_file.parent / CUSTOMER_LOAD_UNITS_FILE
+
+
+def find_company_file(category_file: Path) -> Path | None:
+    """Nearest company.yaml above a category.yaml, so a category validated
+    on its own still sees its customer's carriers."""
+    for parent in category_file.resolve().parents:
+        candidate = parent / "company.yaml"
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def load_carriers(company_file: Path | None = None) -> dict[str, dict]:
+    """Global carriers plus the customer's own (customer ids never shadow
+    global ids - check_customer_load_units reports a clash)."""
+    catalog = load_yaml(ELEMENTS_DIR / "load_unit_types.yaml") or {}
+    carriers = {c["id"]: c for c in catalog.get("load_unit_types", []) if c.get("id")}
+    if company_file is not None:
+        path = customer_load_units_file(company_file)
+        if path.exists():
+            for carrier in (load_yaml(path) or {}).get("load_unit_types", []) or []:
+                if carrier.get("id") and carrier["id"] not in carriers:
+                    carriers[carrier["id"]] = carrier
+    return carriers
+
+
+def check_customer_load_units(company_file: Path, global_ids: set[str]) -> list[str]:
+    """Schema per entry, no duplicate ids, no id that already exists in the
+    global catalog (a customer extends the catalog, it does not redefine
+    a standard carrier)."""
+    path = customer_load_units_file(company_file)
+    if not path.exists():
+        return []
+    errors = validate_element_catalog(path, "load-unit-type.schema.json", "load_unit_types")
+    data = load_yaml(path) or {}
+    ids = [c.get("id") for c in data.get("load_unit_types", []) or [] if c.get("id")]
+    duplicates = sorted({i for i in ids if ids.count(i) > 1})
+    if duplicates:
+        errors.append(f"{path}: duplicate load_unit_types ids: {duplicates}")
+    for carrier_id in sorted(set(ids) & global_ids):
+        errors.append(
+            f"{path}: load_unit_type '{carrier_id}' already exists in elements/load_unit_types.yaml"
+            f" - use the global carrier or choose another id"
+        )
+    return errors
+
+
+def with_customer_load_units(element_ids: dict[str, set[str]], company_file: Path | None) -> dict[str, set[str]]:
+    """element_ids with the customer's carrier ids added."""
+    if company_file is None:
+        return element_ids
+    merged = dict(element_ids)
+    merged["load_unit_types"] = set(element_ids.get("load_unit_types", set())) | set(load_carriers(company_file))
+    return merged
+
+
 def check_item_refs(path: Path, category_data: dict, element_ids: dict[str, set[str]]) -> list[str]:
     """Checks items.yaml's default_uom/hazmat_classes against element
     catalogs, and that every item resolves a default_uom (own field or
@@ -283,7 +346,7 @@ def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, 
             load_unit = step.get("load_unit_type")
             lu_ids = element_ids.get("load_unit_types", set())
             if load_unit and lu_ids and load_unit not in lu_ids:
-                errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: load_unit_type '{load_unit}' not found in elements/load_unit_types.yaml")
+                errors.append(f"{path}: packaging '{item_id}' uom_hierarchy[{i}]: load_unit_type '{load_unit}' not found in elements/load_unit_types.yaml or the customer's load_unit_types.yaml")
 
             barcodes = step.get("barcodes", [])
             for barcode in barcodes:
@@ -296,7 +359,7 @@ def check_packaging_refs(path: Path, item_ids: set[str], element_ids: dict[str, 
     return errors
 
 
-def check_load_unit_payload(path: Path, items_data: dict | None) -> list[str]:
+def check_load_unit_payload(path: Path, items_data: dict | None, carriers: dict[str, dict] | None = None) -> list[str]:
     """For each packaging level with a load_unit_type: goods weight of the
     level (item weight x base units in that level) must not exceed the
     carrier's max_weight. Tare is not added - max_weight is the carrier's
@@ -306,8 +369,8 @@ def check_load_unit_payload(path: Path, items_data: dict | None) -> list[str]:
     data = load_yaml(path)
     if not data:
         return errors
-    catalog = load_yaml(ELEMENTS_DIR / "load_unit_types.yaml") or {}
-    carriers = {c["id"]: c for c in catalog.get("load_unit_types", []) if c.get("id")}
+    if carriers is None:
+        carriers = load_carriers()
     weights = {}
     for item in (items_data or {}).get("items", []):
         weight = item.get("weight")
@@ -370,12 +433,18 @@ def validate_category_file(
     category_file: Path,
     element_ids: dict[str, set[str]] = {},
     owner_ids: set[str] | None = None,
+    company_file: Path | None = None,
 ) -> list[str]:
     """Validates a single category-level category.yaml and everything it
     imports. owner_ids = the company's declared owners when called from
-    validate_company_file, None when the category is validated alone."""
+    validate_company_file, None when the category is validated alone.
+    company_file = the owning company.yaml (for customer carriers); found
+    above the category when not given."""
     if not category_file.exists():
         return [f"category file missing: {category_file}"]
+    if company_file is None:
+        company_file = find_company_file(category_file)
+    element_ids = with_customer_load_units(element_ids, company_file)
 
     all_errors = validate_file(category_file, "category.schema.json")
     category_data = load_yaml(category_file) or {}
@@ -411,7 +480,9 @@ def validate_category_file(
     if "packaging.yaml" in imports:
         all_errors += check_packaging_refs(imports["packaging.yaml"], item_ids, element_ids)
         all_errors += check_load_unit_payload(
-            imports["packaging.yaml"], load_yaml(imports["items.yaml"]) if "items.yaml" in imports else None
+            imports["packaging.yaml"],
+            load_yaml(imports["items.yaml"]) if "items.yaml" in imports else None,
+            load_carriers(company_file),
         )
         packaging_data = load_yaml(imports["packaging.yaml"]) or {}
         packaged_item_ids = {
@@ -446,9 +517,11 @@ def validate_company_file(company_file: Path, element_ids: dict[str, set[str]] =
         all_errors.append(f"{company_file}: duplicate owner ids: {duplicates}")
     owner_ids = set(owner_list)
 
+    all_errors += check_customer_load_units(company_file, element_ids.get("load_unit_types", set()))
+
     barcode_records: list[dict] = []
     for category_file in collect_relative_refs(company_file, "company", "categories"):
-        all_errors += validate_category_file(category_file, element_ids, owner_ids)
+        all_errors += validate_category_file(category_file, element_ids, owner_ids, company_file)
         if category_file.exists():
             barcode_records += category_barcode_records(category_file)
 
