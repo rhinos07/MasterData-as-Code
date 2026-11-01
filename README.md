@@ -236,8 +236,9 @@ copy. Customer carrier ids in a storage type are checked at site level
 by Warehouse-as-Code (`tools/cross_refs.py`), which knows the site's
 MasterData company.
 
-`autostore_bin` (no height) is deprecated and stays only until
-Topology-as-Code and Allocation-as-Code reference the height variants.
+AutoStore has exactly three bin types, one per height. The former
+`autostore_bin` (no height) is removed; Topology-as-Code keeps it in its
+pinned copy until it re-pins and switches to the height variants.
 
 ## Open Scoping Question
 
