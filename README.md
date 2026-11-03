@@ -16,14 +16,13 @@ pattern (JSON Schema validation, `structure/` vs. `strategies/`,
 | [`Topology-as-Code`](https://github.com/rhinos07/Topology-as-Code) | Physical warehouse structure, material-flow communication, movement/replenishment rules |
 | [`OrderOrchestration-as-Code`](https://github.com/rhinos07/OrderOrchestration-as-Code) | How incoming orders are split, and which downstream workflow each split triggers |
 | **MasterData-as-Code** (this repo) | Item/article master data, packaging/UOM hierarchy, sourcing & lifecycle rules |
-| [`Allocation-as-Code`](https://github.com/rhinos07/Allocation-as-Code) | Stock-search configuration: search-zone sequence, selection strategy, constraints |
+| [`Allocation-as-Code`](https://github.com/rhinos07/Allocation-as-Code) | Stock-search configuration (search-zone sequence, selection strategy, constraints) and its inbound counterpart, putaway placement (putaway-zone sequence, placement strategy, constraints) |
 
-`Topology-as-Code`'s `elements/load_unit_types.yaml` is conceptually
-packaging master data and a candidate to eventually move here (see
-"Shared Vocabulary" below); all three sibling repos reference item/
-category ids owned by this repo -
-`OrderOrchestration-as-Code`'s `material_request.item_id`, and now also
-`Allocation-as-Code`'s `search_rule.applies_to.category`/`item_id`.
+This repo owns the load unit, storage condition and UOM catalogs;
+`Topology-as-Code` keeps pinned copies (see "Shared Vocabulary" below).
+The sibling repos reference item, category and owner ids owned by this
+repo - `OrderOrchestration-as-Code`'s `material_request.item_id` and
+`Allocation-as-Code`'s `applies_to.item_id`/`category`/`owner`.
 
 ## Core Principle
 
@@ -268,11 +267,13 @@ separate-owners/separate-lifecycle reasoning used to keep
       category's `default_attributes`) into a flat items artifact -
       there's no generator syntax to expand here, unlike
       `Topology-as-Code`'s `storage_point_generator`.
-- [ ] Cross-repo checks for `tracking`: `Allocation-as-Code` FEFO or
+- [x] ~~Cross-repo checks for `tracking`: `Allocation-as-Code` FEFO or
       `min_remaining_shelf_life_days` on an item without tracked expiry;
       an outbound shelf-life floor above `min_remaining_at_receipt_days`;
-      `allow_mixed_lots` in putaway rules for an item with `lot: none`
-      (Warehouse-as-Code rules R1–R3, not checked yet).
+      `allow_mixed_lots` in putaway rules for an item with `lot: none`~~ -
+      done in Warehouse-as-Code (`tools/consistency_rules.py`, rules
+      R1–R3), on this repo's compiled items (`tools/compile.py`, so
+      category inheritance of `tracking` applies).
 - [ ] Distinguish expiry kinds (best-before / use-by / pharma expiry) once
       a customer needs different blocking behaviour per kind.
 - [x] ~~Decide the shared-vocabulary question (`load_unit_types.yaml`
@@ -284,11 +285,12 @@ separate-owners/separate-lifecycle reasoning used to keep
       manifest per facility names this repo's company, and
       `tools/check_sites.py` resolves Allocation's item ids, categories
       and owners against it.
-- [ ] Item ids in `OrderOrchestration-as-Code`: its configuration holds
-      none; only its illustrative `examples/` do, and they still use ids
-      this repo does not define (`ITEM_SMALL_GADGET`, `ITEM_BULKY_LAMP`,
-      `ITEM_WIDGET`). Live orders are runtime data, checked at order
-      intake by the WMS.
+- [x] ~~Item ids in `OrderOrchestration-as-Code`'s illustrative
+      `examples/`~~ - `ITEM_SMALL_GADGET`, `ITEM_BULKY_LAMP` and
+      `ITEM_WIDGET` are defined here now, and Warehouse-as-Code's site
+      check resolves the examples' item ids against this repo. Its
+      configuration holds no item ids; live orders are runtime data,
+      checked at order intake by the WMS.
 
 ### Out of Scope (By Design)
 
