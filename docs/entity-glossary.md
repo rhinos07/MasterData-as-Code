@@ -83,11 +83,12 @@ configuration.
 | `Allocation-as-Code`'s `search_rule.applies_to.category`/`item_id` | This repo's `category.id` / `structure/items.yaml` `id` |
 | `structure/packaging.yaml`'s `item_id` | This repo's own `structure/items.yaml` `id` (same category) |
 
-No repo's own `tools/validate.py` checks these. `Warehouse-as-Code`
-does, per site: its site manifest names this repo's company, and
-`tools/check_sites.py` resolves Allocation's item ids, categories and
-owners against it. `OrderOrchestration-as-Code` configuration holds no
-item ids (only its illustrative `examples/` and live orders do).
+No repo's own `tools/validate.py` checks these, and nothing else does
+either yet: `Warehouse-as-Code` is now a pure overview/map repo (README +
+`docs/` only, no `tools/`), so the per-site cross-check described in an
+earlier draft of this glossary was never built anywhere. Open - see this
+repo's README "Next Steps". `OrderOrchestration-as-Code` configuration
+holds no item ids (only its illustrative `examples/` and live orders do).
 
 ## What This Repo Is Not
 
