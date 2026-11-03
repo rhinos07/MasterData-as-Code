@@ -232,11 +232,9 @@ the schema. Rules (`tools/validate.py`):
   payload check (goods weight <= `max_weight`) applies to both.
 
 Topology-as-Code checks storage types only against its pinned global
-copy. Customer carrier ids in a storage type are **not yet** checked at
-site level anywhere - `Warehouse-as-Code` is now a pure overview/map repo
-(README + `docs/` only, no `tools/`), so no repo currently resolves a
-site's storage-type carrier ids against this repo's customer-level
-catalog. Open, see "Next Steps".
+copy. Customer carrier ids in a storage type are checked at site level
+by Warehouse-as-Code (`tools/cross_refs.py`), which knows the site's
+MasterData company.
 
 AutoStore has exactly three bin types, one per height. The former
 `autostore_bin` (no height) is removed; Topology-as-Code keeps it in its
@@ -281,13 +279,11 @@ separate-owners/separate-lifecycle reasoning used to keep
       location)~~ - owned here, pinned copy in `Topology-as-Code`.
 - [ ] Decide the rest of the open scoping question (suppliers, customers;
       stock owners are done) - Warehouse-as-Code backlog D5.
-- [ ] Cross-check `Allocation-as-Code`'s `applies_to.category`/`item_id`
-      against this repo's real ids - no repo's tooling does this yet.
-      `Warehouse-as-Code` is a pure overview/map repo now (no `tools/`),
-      so a per-site cross-check (if built) would need a new home - most
-      likely a small addition to `WMS-POC`, which already executes config
-      from several sibling repos together, or a dedicated site-manifest
-      mechanism in one of the config repos.
+- [x] ~~Cross-check `Allocation-as-Code`'s `applies_to.category`/`item_id`
+      against this repo's real ids~~ - done in Warehouse-as-Code: a site
+      manifest per facility names this repo's company, and
+      `tools/check_sites.py` resolves Allocation's item ids, categories
+      and owners against it.
 - [ ] Item ids in `OrderOrchestration-as-Code`: its configuration holds
       none; only its illustrative `examples/` do, and they still use ids
       this repo does not define (`ITEM_SMALL_GADGET`, `ITEM_BULKY_LAMP`,
